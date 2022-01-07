@@ -90,8 +90,8 @@ namespace ft{
 				_data[i] = value;
 			_usedMem = n;
 		}
-		template<class Iterator>
-		void	assign(Iterator start, Iterator finish){
+		template<class iterator>
+		void	assign(iterator start, iterator finish){
 			while(start != finish)
 				push_back(*start++);
 		}
@@ -122,46 +122,81 @@ namespace ft{
 			for (size_t i = 0; i < _usedMem; i++)
 				_data[i] = oth._data[i];
 		}
-	// * Iterators
-	public:
-		class Iterator{
+	// * iterators
+	private:
+		class iterator_mother{
 			friend class vector;
-			T		const * _data;
+			T	 * _data;
 			size_t	const _usedMem;
 			size_t	_Iter;
-			Iterator(T * data, size_t usedMem, size_t currentIter)
+			iterator_mother(T * data, size_t usedMem, size_t currentIter)
 				: _data(data), _usedMem(usedMem), _Iter(currentIter){}
 		public:
-			Iterator()
+			iterator_mother()
 				: _data(NULL), _usedMem(0), _Iter(0){}
-			Iterator(Iterator const & iter)
+			iterator_mother(iterator_mother const & iter)
 				: _data(iter._data)
 				, _usedMem(iter._usedMem)
 				, _Iter(iter._Iter){}
-			~Iterator(){}
-		// * operator ++ -- *
-			Iterator operator++(void){_Iter++; return *this;}
-			Iterator operator++(int){Iterator tmp(*this); _Iter++; return tmp;}
-			Iterator operator--(void){_Iter--; return *this;}
-			Iterator operator--(int){Iterator tmp(*this); _Iter--; return tmp;}
-			Iterator&operator*(){if (_Iter > _usedMem) _Iter = _usedMem; return _data[_Iter];}
+			virtual ~iterator_mother(){}
+			T& operator*(){
+				if (_Iter > _usedMem || _Iter < 0)
+					return _data[_usedMem - 1];
+				return _data[_Iter];}
 		// * bool operator
 		private:
-			void	compare(Iterator const & oth){
+			void	compare(iterator_mother const & oth){
 				if (oth._data != _data)
 					throw runtime_error(NO_COMPARE_DATA);
 			}
 		public:
-			bool operator>	(Iterator const & oth){compare(oth); return _Iter >  oth._Iter;}
-			bool operator>=	(Iterator const & oth){compare(oth); return _Iter >= oth._Iter;}
-			bool operator<	(Iterator const & oth){compare(oth); return _Iter <  oth._Iter;}
-			bool operator<=	(Iterator const & oth){compare(oth); return _Iter <= oth._Iter;}
-			bool operator==	(Iterator const & oth){compare(oth); return _Iter == oth._Iter;}
-			bool operator!=	(Iterator const & oth){compare(oth); return _Iter != oth._Iter;}
+			bool operator>	(iterator_mother const & oth){compare(oth); return _Iter >  oth._Iter;}
+			bool operator>=	(iterator_mother const & oth){compare(oth); return _Iter >= oth._Iter;}
+			bool operator<	(iterator_mother const & oth){compare(oth); return _Iter <  oth._Iter;}
+			bool operator<=	(iterator_mother const & oth){compare(oth); return _Iter <= oth._Iter;}
+			bool operator==	(iterator_mother const & oth){compare(oth); return _Iter == oth._Iter;}
+			bool operator!=	(iterator_mother const & oth){compare(oth); return _Iter != oth._Iter;}
+		};
+
+		public:
+		class iterator: public iterator_mother{
+		public:
+			iterator(T * data, size_t usedMem, size_t iter): iterator_mother(data, usedMem, iter){};
+			iterator operator++(void){ ++iterator::_Iter; return *this;}
+			iterator operator--(void){ --iterator::_Iter; return *this;}
+			iterator operator--(int){
+				iterator tmp(*this);
+				iterator_mother::_Iter--;
+				return tmp;
+			}
+			iterator operator++(int){
+				iterator tmp(*this);
+				iterator_mother::_Iter++;
+				return tmp;
+			}
+		};
+
+		class reverce_iterator: public iterator_mother{
+		public:
+			reverce_iterator(T * data, size_t usedMem, size_t iter): iterator_mother(data, usedMem, iter){};
+			reverce_iterator operator++(void){ --iterator::_Iter; return *this;}
+			reverce_iterator operator--(void){ ++iterator::_Iter; return *this;}
+			reverce_iterator operator--(int){
+				reverce_iterator tmp(*this);
+				iterator_mother::_Iter++;
+				return tmp;
+			}
+			reverce_iterator operator++(int){
+				reverce_iterator tmp(*this);
+				iterator_mother::_Iter--;
+				return tmp;
+			}
 		};
 
 	// * begin and end
-	Iterator begin(){return Iterator(_data, _usedMem, 0);}
-	Iterator end(){return Iterator(_data, _usedMem, _usedMem - 1);}
+	iterator begin(){return iterator(_data, _usedMem, 0);}
+	iterator end(){return iterator(_data, _usedMem, _usedMem);}
+	reverce_iterator rbegin(){return reverce_iterator(_data, _usedMem, _usedMem -1);}
+	reverce_iterator rend(){return reverce_iterator(_data, _usedMem, -1);}
 	};
 };
