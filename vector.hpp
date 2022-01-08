@@ -1,3 +1,4 @@
+#include <iostream>
 #include <memory>
 #include <string>
 using std::runtime_error;
@@ -6,197 +7,248 @@ using std::max;
 #define NO_MEM_SPACE "exception: vector: allocator can't allocate memory"
 #define NO_COMPARE_DATA "exception: vector::iterator: data is not comparable!"
 
+
+#define IS_NEED_DOWN_REALLOC( Hint, UsedMem ) ( (Hint - UsedMem) > (UsedMem + (UsedMem >> 2)) )
+
 namespace ft{
 	template <class T, class Allocator = std::allocator<T> >
 	class vector{
-		friend class iterator;
-	private:
-		size_t			_reserve;
-		Allocator		_alloc;
-		size_t			_usedMem;
-		size_t			_hitpoint;
-		T *				_data;
+		friend class		iterator;
 	public:
-		vector()
-			: _usedMem(0)
-			, _hitpoint(0)
-			, _reserve(10)
-			, _data(NULL){}
-		vector(size_t n, T const & val = T()): vector(){
-			// _reserve = 10; ////!!!!! vector() _reserve
-			_hitpoint = max(n << 1, _reserve);
-			_data = _alloc.allocate(_hitpoint);
-			_usedMem = n;
-			for (size_t i = 0; i < n; i++)
-				_data[i] = val;
+		typedef Allocator	allocator_type;
+		typedef	const T&	const_reference;
+		typedef	const T*	const_pointer;
+		typedef	T			value_type;
+		typedef	T&			reference;
+		typedef	T*			pointer;
+	private:
+		ptrdiff_t			_Reserve;
+		ptrdiff_t			_UsedMem;
+		ptrdiff_t			_Hint;
+		Allocator			_Alloc;
+		pointer				_Data;
+	private:
+		void	setterConstructor(
+			ptrdiff_t Reserve = 10, 
+			ptrdiff_t UsedMem = 0, 
+			ptrdiff_t Hint = 0)
+		{
+			_UsedMem = UsedMem;
+			_Reserve = Reserve;
+			_Hint = Hint;
+			if (Hint > 0){
+				_Data = _Alloc.allocate(_Hint);
+				if (!_Data)
+					throw runtime_error(NO_MEM_SPACE);
+			} else
+				_Data = NULL;
 		}
-		vector(vector const & oth)
-			: _hitpoint(oth._hitpoint)
-			, _usedMem(oth._usedMem)
-			, _alloc(oth._alloc)
-			, _data(oth._data){}
-		~vector(){_alloc.deallocate(_data, _hitpoint);}
-		void	push_back(const T & value){
-			if (!_data){
-				_hitpoint = _reserve;
-				_data = _alloc.allocate(_hitpoint);
-			}else if (_usedMem == _hitpoint){
-				T * tmpData = _alloc.allocate(_hitpoint << 1);
+	public:
+		vector(){
+			setterConstructor();
+		}
+		vector(ft::vector<T> const & oth){
+			setterConstructor();
+			copyFrom(oth);
+		}
+		vector(ptrdiff_t size, value_type const & val = value_type()){
+			setterConstructor(10, size, max(size << 1, _Reserve));
+			for (ptrdiff_t i = 0; i < size; i++)
+				_Data[i] = val;
+		}
+		~vector(){_Alloc.deallocate(_Data, _Hint);}
+		void	push_back(const value_type & value){
+			pointer			tmpData;
+			Allocator		tmpAlloc;
+
+			if (!_Data){
+				_Hint = _Reserve;
+				_Data = _Alloc.allocate(_Hint);
+				if (!_Data)
+					throw runtime_error(NO_MEM_SPACE);
+			} else if (_UsedMem == _Hint){
+				tmpData = tmpAlloc.allocate(_Hint << 1);
 				if (!tmpData)
 					throw runtime_error(NO_MEM_SPACE);
-				for (size_t i = 0; i < _usedMem; i++)
-					tmpData[i] = _data[i];
-				_alloc.deallocate(_data, _hitpoint);
-				_hitpoint = _hitpoint << 1;
-				_data = tmpData;
+				for (ptrdiff_t i = 0; i < _UsedMem; i++)
+					tmpData[i] = _Data[i];
+				_Alloc.deallocate(_Data, _Hint);
+				_Alloc = Allocator(tmpAlloc);
+				_Hint = _Hint << 1;
+				_Data = tmpData;
 			}
-			_data[_usedMem] = value;
-			_usedMem++;
+			_Data[_UsedMem++] = value;
 		}
-		T & at(size_t i){
-			if (i >= _usedMem)
+		reference at(ptrdiff_t i){
+			if (i >= _UsedMem)
 				throw runtime_error("exception: vector: out of range");
-			return _data[i];
+			return _Data[i];
 		}
-		T & operator [](size_t i){return _data[i];}
+		reference operator [](ptrdiff_t i){return _Data[i];}
 		void	swap(ft::vector<T> & oth){
-			size_t tmpReservedMinMem = oth._reserve;
-			Allocator tmpAlloc = oth._alloc;
-			size_t tmpHitPoint = oth._hitpoint;
-			size_t tmpUsedMem = oth._usedMem;
-			T * tmpData = oth._data;
+			ptrdiff_t tmpReservedMinMem = oth._Reserve;
+			Allocator tmpAlloc = oth._Alloc;
+			ptrdiff_t tmpHitPoint = oth._Hint;
+			ptrdiff_t tmpUsedMem = oth._UsedMem;
+			pointer tmpData = oth._Data;
 
-			oth._reserve = _reserve;
-			oth._hitpoint = _hitpoint;
-			oth._usedMem = _usedMem;
-			oth._alloc = _alloc;
-			oth._data = _data;
+			oth._Reserve = _Reserve;
+			oth._Hint = _Hint;
+			oth._UsedMem = _UsedMem;
+			oth._Alloc = _Alloc;
+			oth._Data = _Data;
 
-			_reserve = tmpReservedMinMem;
-			_hitpoint = tmpHitPoint;
-			_usedMem = tmpUsedMem;
-			_alloc = tmpAlloc;
-			_data = tmpData;
+			_Reserve = tmpReservedMinMem;
+			_Hint = tmpHitPoint;
+			_UsedMem = tmpUsedMem;
+			_Alloc = tmpAlloc;
+			_Data = tmpData;
 		}
-		void 	assign(size_t n, T const & value){
-			if (n > _hitpoint){
-				_hitpoint = n << 1;
-				_alloc.deallocate(_data, _hitpoint);
-				_data = _alloc.allocate(_hitpoint);
-				if (!_data)
+		void 	assign(ptrdiff_t n, const_reference value){
+			if (n > _Hint){
+				_Hint = n << 1;
+				_Alloc.deallocate(_Data, _Hint);
+				_Data = _Alloc.allocate(_Hint);
+				if (!_Data)
 					throw runtime_error(NO_MEM_SPACE);
 			}
-			for (size_t i = 0; i < n; i++)
-				_data[i] = value;
-			_usedMem = n;
+			for (ptrdiff_t i = 0; i < n; i++)
+				_Data[i] = value;
+			_UsedMem = n;
 		}
 		template<class iterator>
 		void	assign(iterator start, iterator finish){
+			std::allocator<T> tmpAlloc;
+			// Allocator	tmpAlloc;
+			pointer		tmpData;
 			while(start != finish)
 				push_back(*start++);
+			if (IS_NEED_DOWN_REALLOC(_Hint, _UsedMem)){
+				//	!!!			!!!				!!!!					!!!!!								!!!!!§
+				tmpData = tmpAlloc.allocate(_UsedMem << 1);
+				for (size_t i = 0; i < _UsedMem; i++)
+					tmpData[i] = _Data[i];
+				_Alloc.deallocate(_Data, _Hint);
+				_Data = tmpData;
+				_Alloc(tmpAlloc);
+			}
 		}
-		void	reserve(size_t n){_reserve = n;}
-		void	resize(size_t n, T const & val = T()){
+		size_t size() const {return _UsedMem;}
+		void	reserve(ptrdiff_t n){_Reserve = n;} // ?
+		void	resize(ptrdiff_t n, const_reference val = T()){
 			if (n < 1)
 				throw runtime_error("э, пошол отсюда!!! что за ресайз??");
-			if (_usedMem > n)
-				_usedMem = n;
-			T * tmpData = _alloc.allocate(max(n << 1, _reserve));
+			if (_UsedMem > n)
+				_UsedMem = n;
+			value_type * tmpData = _Alloc.allocate(max(n << 1, _Reserve));
 			if (!tmpData)
 				throw runtime_error(NO_MEM_SPACE);
-			for (size_t i = _usedMem - 1; i >= 0; i--)
-				tmpData = _data[i];
-			for (size_t i = n - 1; i >= _usedMem - 1; i--)
-				tmpData = val;
-			_alloc.deallocate(_data, _hitpoint);
-			_hitpoint = max(n << 1, _reserve);
-			_data = tmpData;
+			for (ssize_t i = _UsedMem - 1; i >= 0; i--)
+				tmpData[i] = _Data[i];
+			for (ssize_t i = n - 1; i >= _UsedMem - 1; i--)
+				tmpData[i] = val;
+			_Alloc.deallocate(_Data, _Hint);
+			_Hint = max(n << 1, _Reserve);
+			_Data = tmpData;
 		}
 	private:
-		void replaceFromOth(ft::vector<T> const & oth){
-			if (_data)
-				_alloc.deallocate(_data, _hitpoint);
-			_hitpoint = oth._hitpoint;
-			_usedMem = oth._usedMem;
-			_data = _alloc.allocate(_hitpoint);
-			for (size_t i = 0; i < _usedMem; i++)
-				_data[i] = oth._data[i];
+		void copyFrom(ft::vector<T> const & oth){
+			if (_Data){
+				_Alloc.deallocate(_Data, _Hint);
+				_Data = NULL;
+			}
+			_Hint = oth._Hint;
+			_UsedMem = oth._UsedMem;
+			if (_UsedMem > 0){
+				_Data = _Alloc.allocate(_Hint);
+				for (ptrdiff_t i = 0; i < _UsedMem; i++)
+					_Data[i] = oth._Data[i];
+			}
 		}
 	// * iterators
 	private:
-		class iterator_mother{
-			friend class vector;
-			T	 * _data;
-			size_t	const _usedMem;
-			size_t	_Iter;
-			iterator_mother(T * data, size_t usedMem, size_t currentIter)
-				: _data(data), _usedMem(usedMem), _Iter(currentIter){}
+		class iterator_base{
 		public:
-			iterator_mother()
-				: _data(NULL), _usedMem(0), _Iter(0){}
-			iterator_mother(iterator_mother const & iter)
-				: _data(iter._data)
-				, _usedMem(iter._usedMem)
+			typedef	T			value_type;
+			typedef	T&			reference;
+			// typedef	const T&	const_reference;
+			typedef	T*			pointer;
+			// typedef	const T*	const_pointer;
+		private:
+			friend class vector;
+			pointer		_Data;
+			ptrdiff_t	const _UsedMem;
+			ptrdiff_t	_Iter;
+			iterator_base(pointer data, ptrdiff_t usedMem, ptrdiff_t currentIter)
+				: _Data(data), _UsedMem(usedMem), _Iter(currentIter){}
+		public:
+			iterator_base()
+				: _Data(NULL), _UsedMem(0), _Iter(0){}
+			iterator_base(iterator_base const & iter)
+				: _Data(iter._Data)
+				, _UsedMem(iter._UsedMem)
 				, _Iter(iter._Iter){}
-			virtual ~iterator_mother(){}
-			T& operator*(){
-				if (_Iter > _usedMem || _Iter < 0)
-					return _data[_usedMem - 1];
-				return _data[_Iter];}
+			virtual ~iterator_base(){}
+			reference operator*(){
+				if (_Iter >= _UsedMem || _Iter < 0)
+					return _Data[_UsedMem - 1];
+				return _Data[_Iter];}
 		// * bool operator
 		private:
-			void	compare(iterator_mother const & oth){
-				if (oth._data != _data)
+			void	compare(iterator_base const & oth){
+				if (oth._Data != _Data)
 					throw runtime_error(NO_COMPARE_DATA);
 			}
 		public:
-			bool operator>	(iterator_mother const & oth){compare(oth); return _Iter >  oth._Iter;}
-			bool operator>=	(iterator_mother const & oth){compare(oth); return _Iter >= oth._Iter;}
-			bool operator<	(iterator_mother const & oth){compare(oth); return _Iter <  oth._Iter;}
-			bool operator<=	(iterator_mother const & oth){compare(oth); return _Iter <= oth._Iter;}
-			bool operator==	(iterator_mother const & oth){compare(oth); return _Iter == oth._Iter;}
-			bool operator!=	(iterator_mother const & oth){compare(oth); return _Iter != oth._Iter;}
+			bool operator>	(iterator_base const & oth){compare(oth); return _Iter >  oth._Iter;}
+			bool operator>=	(iterator_base const & oth){compare(oth); return _Iter >= oth._Iter;}
+			bool operator<	(iterator_base const & oth){compare(oth); return _Iter <  oth._Iter;}
+			bool operator<=	(iterator_base const & oth){compare(oth); return _Iter <= oth._Iter;}
+			bool operator==	(iterator_base const & oth){compare(oth); return _Iter == oth._Iter;}
+			bool operator!=	(iterator_base const & oth){compare(oth); return _Iter != oth._Iter;}
 		};
 
 		public:
-		class iterator: public iterator_mother{
+		class iterator: public iterator_base{
 		public:
-			iterator(T * data, size_t usedMem, size_t iter): iterator_mother(data, usedMem, iter){};
+			iterator(): iterator_base(){}
+			iterator(pointer data, ptrdiff_t usedMem, ptrdiff_t iter): iterator_base(data, usedMem, iter){};
 			iterator operator++(void){ ++iterator::_Iter; return *this;}
 			iterator operator--(void){ --iterator::_Iter; return *this;}
 			iterator operator--(int){
 				iterator tmp(*this);
-				iterator_mother::_Iter--;
+				iterator_base::_Iter--;
 				return tmp;
 			}
 			iterator operator++(int){
 				iterator tmp(*this);
-				iterator_mother::_Iter++;
+				iterator_base::_Iter++;
 				return tmp;
 			}
 		};
 
-		class reverce_iterator: public iterator_mother{
+		class reverse_iterator: public iterator_base{
 		public:
-			reverce_iterator(T * data, size_t usedMem, size_t iter): iterator_mother(data, usedMem, iter){};
-			reverce_iterator operator++(void){ --iterator::_Iter; return *this;}
-			reverce_iterator operator--(void){ ++iterator::_Iter; return *this;}
-			reverce_iterator operator--(int){
-				reverce_iterator tmp(*this);
-				iterator_mother::_Iter++;
+			reverse_iterator(): iterator_base(){}
+			reverse_iterator(pointer data, ptrdiff_t usedMem, ptrdiff_t iter): iterator_base(data, usedMem, iter){};
+			reverse_iterator operator++(void){ --iterator::_Iter; return *this;}
+			reverse_iterator operator--(void){ ++iterator::_Iter; return *this;}
+			reverse_iterator operator--(int){
+				reverse_iterator tmp(*this);
+				iterator_base::_Iter++;
 				return tmp;
 			}
-			reverce_iterator operator++(int){
-				reverce_iterator tmp(*this);
-				iterator_mother::_Iter--;
+			reverse_iterator operator++(int){
+				reverse_iterator tmp(*this);
+				iterator_base::_Iter--;
 				return tmp;
 			}
 		};
 
 	// * begin and end
-	iterator begin(){return iterator(_data, _usedMem, 0);}
-	iterator end(){return iterator(_data, _usedMem, _usedMem);}
-	reverce_iterator rbegin(){return reverce_iterator(_data, _usedMem, _usedMem -1);}
-	reverce_iterator rend(){return reverce_iterator(_data, _usedMem, -1);}
+	reverse_iterator	rbegin(){return reverse_iterator(_Data, _UsedMem, _UsedMem -1);}
+	iterator			begin(){return iterator(_Data, _UsedMem, 0);}
+	reverse_iterator	rend(){return reverse_iterator(_Data, _UsedMem, -1);}
+	iterator			end(){return iterator(_Data, _UsedMem, _UsedMem);}
 	};
 };
