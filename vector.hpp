@@ -6,9 +6,11 @@ using std::allocator;
 using std::max;
 #define NO_MEM_SPACE "exception: vector: allocator can't allocate memory"
 #define NO_COMPARE_DATA "exception: vector::iterator: data is not comparable!"
+#define EX_DEF_NULL "exeption: trying deference NULL"
 
 
-#define IS_NEED_DOWN_REALLOC( Hint, UsedMem ) ( (Hint - UsedMem) > (UsedMem + (UsedMem >> 2)) )
+#define IS_NEED_DOWN_REALLOC( Hint, UsedMem ) \
+( (Hint - UsedMem) > (UsedMem + (UsedMem >> 2)) )
 
 namespace ft{
 	template <class T, class Allocator = std::allocator<T> >
@@ -28,6 +30,7 @@ namespace ft{
 		Allocator			_Alloc;
 		pointer				_Data;
 	private:
+		//* private methods
 		void	setterConstructor(
 			ptrdiff_t Reserve = 10, 
 			ptrdiff_t UsedMem = 0, 
@@ -43,7 +46,40 @@ namespace ft{
 			} else
 				_Data = NULL;
 		}
+		void	reallocate(ptrdiff_t size, const_reference val = T(), bool mod_2x = false){
+			ptrdiff_t		newSize = size;
+			value_type *	tmpData;
+
+			if (mod_2x)
+				newSize <<= 1;
+			tmpData = _Alloc.allocate(max(newSize, _Reserve));
+			if (!tmpData)
+				throw runtime_error(NO_MEM_SPACE);
+			if (_UsedMem > size)
+				_UsedMem = size;
+			for (ssize_t i = _UsedMem - 1; i >= 0; i--)
+				tmpData[i] = _Data[i];
+			for (ssize_t i = max(size, _Reserve) - 1; i >= _UsedMem; i--)
+				tmpData[i] = val;
+			_Alloc.deallocate(_Data, _Hint);
+			_Data = tmpData;
+			_Hint = newSize;
+		}
+		void copyFrom(ft::vector<T> const & oth){
+			if (_Data){
+				_Alloc.deallocate(_Data, _Hint);
+				_Data = NULL;
+			}
+			_Hint =	oth._Hint;
+			_UsedMem = oth._UsedMem;
+			if (_UsedMem > 0){
+				_Data = _Alloc.allocate(_Hint);
+				for (ptrdiff_t i = 0; i < _UsedMem; i++)
+					_Data[i] = oth._Data[i];
+			}
+		}
 	public:
+		//* constructor's / destructor
 		vector(){
 			setterConstructor();
 		}
@@ -57,34 +93,33 @@ namespace ft{
 				_Data[i] = val;
 		}
 		~vector(){_Alloc.deallocate(_Data, _Hint);}
+		//*	public methods
+		inline size_t	capacity()	const {return _Hint;}
+		inline size_t	size()		const {return _UsedMem;}
+		reference		operator [](ptrdiff_t i)		{return _Data[i];}
+		const_reference	operator [](ptrdiff_t i) const	{return _Data[i];}
+		inline void		clean()		{_UsedMem = 0;}
+		reference		at(ptrdiff_t i){
+			if (i >= _UsedMem || i < 0 || !_Data)
+				throw std::out_of_range("vector");
+			return this->operator[](i);
+		}
+		const_reference	at(ptrdiff_t i) const{
+			if (i >= _UsedMem || i < 0 || !_Data)
+				throw std::out_of_range("vector");
+			return this->operator[](i);
+		}
 		void	push_back(const value_type & value){
-			pointer			tmpData;
-			Allocator		tmpAlloc;
-
 			if (!_Data){
 				_Hint = _Reserve;
 				_Data = _Alloc.allocate(_Hint);
 				if (!_Data)
 					throw runtime_error(NO_MEM_SPACE);
 			} else if (_UsedMem == _Hint){
-				tmpData = tmpAlloc.allocate(_Hint << 1);
-				if (!tmpData)
-					throw runtime_error(NO_MEM_SPACE);
-				for (ptrdiff_t i = 0; i < _UsedMem; i++)
-					tmpData[i] = _Data[i];
-				_Alloc.deallocate(_Data, _Hint);
-				_Alloc = Allocator(tmpAlloc);
-				_Hint = _Hint << 1;
-				_Data = tmpData;
+				reallocate(_Hint, T(), true);
 			}
 			_Data[_UsedMem++] = value;
 		}
-		reference at(ptrdiff_t i){
-			if (i >= _UsedMem)
-				throw runtime_error("exception: vector: out of range");
-			return _Data[i];
-		}
-		reference operator [](ptrdiff_t i){return _Data[i];}
 		void	swap(ft::vector<T> & oth){
 			ptrdiff_t tmpReservedMinMem = oth._Reserve;
 			Allocator tmpAlloc = oth._Alloc;
@@ -97,17 +132,29 @@ namespace ft{
 			oth._UsedMem = _UsedMem;
 			oth._Alloc = _Alloc;
 			oth._Data = _Data;
-
 			_Reserve = tmpReservedMinMem;
 			_Hint = tmpHitPoint;
 			_UsedMem = tmpUsedMem;
 			_Alloc = tmpAlloc;
 			_Data = tmpData;
 		}
-		void 	assign(ptrdiff_t n, const_reference value){
+		// template <class InputIterator>
+		// typename std::enable_if<std::__is_input_iterator<InputIterator>::value, InputIterator>::type
+		// void	assign(InputIterator start, InputIterator finish){
+		// 	_Alloc.deallocate(_Data, _Hint);
+		// 	_Hint = max(n, _Reserve);
+		// 	_Data = _Alloc.allocate(_Hint);
+		// 	if (!_Data)
+		// 		throw runtime_error(NO_MEM_SPACE);
+		// 	while(start != finish){
+		// 		push_back(*start++);
+		// 	}
+		// }
+		template<typename U, typename std::enable_if<std::is_integral<typename U::value, U>::type, U> >
+		void 	assign(U n, const_reference value){
 			if (n > _Hint){
-				_Hint = n << 1;
 				_Alloc.deallocate(_Data, _Hint);
+				_Hint = max(n , _Reserve);
 				_Data = _Alloc.allocate(_Hint);
 				if (!_Data)
 					throw runtime_error(NO_MEM_SPACE);
@@ -116,54 +163,29 @@ namespace ft{
 				_Data[i] = value;
 			_UsedMem = n;
 		}
-		template<class iterator>
-		void	assign(iterator start, iterator finish){
-			std::allocator<T> tmpAlloc;
-			// Allocator	tmpAlloc;
-			pointer		tmpData;
-			while(start != finish)
-				push_back(*start++);
-			if (IS_NEED_DOWN_REALLOC(_Hint, _UsedMem)){
-				//	!!!			!!!				!!!!					!!!!!								!!!!!§
-				tmpData = tmpAlloc.allocate(_UsedMem << 1);
-				for (size_t i = 0; i < _UsedMem; i++)
-					tmpData[i] = _Data[i];
-				_Alloc.deallocate(_Data, _Hint);
-				_Data = tmpData;
-				_Alloc(tmpAlloc);
+		void	reserve(ptrdiff_t n){
+			if (n > _Reserve){
+				_Reserve = n;
+				return ;
 			}
+			_Reserve = n;
+			reallocate(n);
 		}
-		size_t size() const {return _UsedMem;}
-		void	reserve(ptrdiff_t n){_Reserve = n;} // ?
 		void	resize(ptrdiff_t n, const_reference val = T()){
-			if (n < 1)
+			if (n < 0)
 				throw runtime_error("э, пошол отсюда!!! что за ресайз??");
-			if (_UsedMem > n)
+			else if (n == 0){
+				clean();
+				return ;
+			}
+			else if (_UsedMem > n)
 				_UsedMem = n;
-			value_type * tmpData = _Alloc.allocate(max(n << 1, _Reserve));
-			if (!tmpData)
-				throw runtime_error(NO_MEM_SPACE);
-			for (ssize_t i = _UsedMem - 1; i >= 0; i--)
-				tmpData[i] = _Data[i];
-			for (ssize_t i = n - 1; i >= _UsedMem - 1; i--)
-				tmpData[i] = val;
-			_Alloc.deallocate(_Data, _Hint);
-			_Hint = max(n << 1, _Reserve);
-			_Data = tmpData;
+			reallocate(n, val);
 		}
-	private:
-		void copyFrom(ft::vector<T> const & oth){
-			if (_Data){
-				_Alloc.deallocate(_Data, _Hint);
-				_Data = NULL;
-			}
-			_Hint = oth._Hint;
-			_UsedMem = oth._UsedMem;
-			if (_UsedMem > 0){
-				_Data = _Alloc.allocate(_Hint);
-				for (ptrdiff_t i = 0; i < _UsedMem; i++)
-					_Data[i] = oth._Data[i];
-			}
+		void	shrink_to_fit(){
+			if (_UsedMem == _Hint)
+				return ;
+			reallocate(_UsedMem);
 		}
 	// * iterators
 	private:
@@ -250,5 +272,26 @@ namespace ft{
 	iterator			begin(){return iterator(_Data, _UsedMem, 0);}
 	reverse_iterator	rend(){return reverse_iterator(_Data, _UsedMem, -1);}
 	iterator			end(){return iterator(_Data, _UsedMem, _UsedMem);}
+
+	const_reference		front() const	{
+		if (!_Data)
+			throw runtime_error(EX_DEF_NULL);
+		return _Data[			0];
+	}
+	const_reference		back()	const	{
+		if (!_Data)
+			throw runtime_error(EX_DEF_NULL);
+		return _Data[_UsedMem -1];
+	}
+	reference			front() 		{
+		if (!_Data)
+			throw runtime_error(EX_DEF_NULL);
+		return _Data[			0];
+	}
+	reference			back()			{
+		if (!_Data)
+			throw runtime_error(EX_DEF_NULL);
+		return _Data[_UsedMem -1];
+	}
 	};
 };

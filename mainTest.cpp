@@ -5,7 +5,8 @@
 #include <vector>
 #include "vector.hpp"
 
-using namespace std;
+// #define VECTOR ft::vector<int>
+#define VECTOR ft::vector<int>
 
 template<class Container>
 void	print(Container con){
@@ -13,45 +14,26 @@ void	print(Container con){
 	typename Container::iterator end = con.end();
 
 	while(beg != end)
-		std::cout << *beg++ << ". ";
+		std::cout << *(beg++) << ". ";
 	std::cout << std::endl;
 }
 
 int main(int ac, char ** av){
-	typedef ft::vector<int>::reverse_iterator iter;
-	ft::vector<int> st;
-	iter begin, end;
-	vector<int> sval;
+	// typedef std::vector<int>::reverse_iterator	siter;
+	VECTOR		vec1;
+	VECTOR		vec2;
+	ac > 1 ? srand(atoi(av[1])) : srand(2222);
+	for (size_t i = 0; i < 17; i++)
+		vec1.push_back(rand() % 80 + 19);
+	vec2.resize(vec1.size());
+	std::copy(vec1.begin(), vec1.end(), vec2.begin());
+	vec2.assign(33, 5);
+	std::cout << "vector 1: "; print(vec1);
+	std::cout << "vector 2: "; print(vec2);
+	// std::cout << "_ft::vector: " << vec1.capacity() << std::endl;
+	std::cout << "vector 1:" << vec1.capacity() << std::endl;
+	std::cout << "vector 2:" << vec2.capacity() << std::endl;
 
-	srand(99987);
-	if (ac > 1)
-		srand(atoi(av[1]));
-	for (size_t i = 0; i < rand() % 900; i++)
-		st.push_back(rand() % 80 + 19);
-
-
-	cout << "_ft::vector: ";	
-	print(st);
-	// sval.resize(st.)
-	sval.resize(st.size());
-	copy(st.begin(), st.end(), sval.begin());
-	cout << "std::vector: ";
-	print(sval);
-
-	// print(st);
-	// st.push_back(1);
-	// st.push_back(2);
-	// st.push_back(3);
-	// st.push_back(4);
-	// st.push_back(5);
-	// st.resize(10, 6);
-	// print(st);
-	// ft::vector<int>::reverse_iterator it = st.rend();
-	// std::cout << *it << std::endl;
-	// try{
-		// std::cout << st.at(40000) << std::endl;
-	// } catch (std::exception const & e) {
-	// 	std::cout << e.what() << std::endl;
-	// }
-	// std::cout << st[500000] << std::endl;
+	// print(ftvec);
+	// ftvec2.resize(ft.)
 }
