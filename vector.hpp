@@ -1,6 +1,8 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <algorithm>
+
 using std::runtime_error;
 using std::allocator;
 using std::max;
@@ -8,10 +10,19 @@ using std::max;
 #define NO_COMPARE_DATA "exception: vector::iterator: data is not comparable!"
 #define EX_DEF_NULL "exeption: trying deference NULL"
 
-
 #define IS_NEED_DOWN_REALLOC( Hint, UsedMem ) \
 ( (Hint - UsedMem) > (UsedMem + (UsedMem >> 2)) )
 
+//* ENABLE IF
+template <bool, typename T>
+struct switch_if{};
+template <typename T>
+struct switch_if<true, T>{typedef T type;};
+
+
+
+
+// * FT NAMESPACE
 namespace ft{
 	template <class T, class Allocator = std::allocator<T> >
 	class vector{
@@ -80,7 +91,7 @@ namespace ft{
 		vector(){
 			setterConstructor();
 		}
-		vector(ft::vector<T> const & oth){
+		vector(ft::vector<T, Allocator> const & oth){
 			setterConstructor();
 			copyFrom(oth);
 		}
@@ -136,31 +147,27 @@ namespace ft{
 			_Alloc = tmpAlloc;
 			_Data = tmpData;
 		}
-		// template <class InputIterator>
-		// typename std::enable_if<std::__is_input_iterator<InputIterator>::value, InputIterator>::type
-		// void	assign(InputIterator start, InputIterator finish){
-		// 	_Alloc.deallocate(_Data, _Hint);
-		// 	_Hint = max(n, _Reserve);
-		// 	_Data = _Alloc.allocate(_Hint);
-		// 	if (!_Data)
-		// 		throw runtime_error(NO_MEM_SPACE);
-		// 	while(start != finish){
-		// 		push_back(*start++);
-		// 	}
-		// }
-		//template<typename U, typename std::enable_if<std::is_integral<typename U::value, U>::type, U> >
-		//void 	assign(U n, const_reference value){
-		//	if (n > _Hint){
-		//		_Alloc.deallocate(_Data, _Hint);
-		//		_Hint = max(n , _Reserve);
-		//		_Data = _Alloc.allocate(_Hint);
-		//		if (!_Data)
-		//			throw runtime_error(NO_MEM_SPACE);
-		//	}
-		//	for (ptrdiff_t i = 0; i < n; i++)
-		//		_Data[i] = value;
-		//	_UsedMem = n;
-		//}
+		template <class InputIterator>
+		typename switch_if<std::__is_input_iterator<InputIterator>::value, void>::type *
+		assign(InputIterator start, InputIterator finish){
+			while(start != finish){
+				push_back(*start++);
+			}
+			return NULL;
+		}
+		void
+		assign(ptrdiff_t n, value_type value){
+			if (n > _Hint){
+				_Alloc.deallocate(_Data, _Hint);
+				_Hint = max(n , _Reserve);
+				_Data = _Alloc.allocate(_Hint);
+				if (!_Data)
+					throw runtime_error(NO_MEM_SPACE);
+			}
+			for (ptrdiff_t i = 0; i < n; i++)
+				_Data[i] = value;
+			_UsedMem = n;
+		}
 		void	reserve(ptrdiff_t n){
 			if (n > _Reserve){
 				_Reserve = n;
