@@ -14,8 +14,7 @@ namespace test{
 	template<typename Container>
 	size_t	myDistance(Container begin, Container end){
 		size_t count = 0;
-		begin += 5;
-		while(begin < end + 3  && ++count)
+		while(!(begin - 3 == end)  && ++count)
 			begin++;
 		return count;
 	}

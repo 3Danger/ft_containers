@@ -31,10 +31,7 @@ namespace ft{
 		pointer				_Data;
 	private:
 		//* private methods
-		void	setterConstructor(
-			ptrdiff_t Reserve = 10, 
-			ptrdiff_t UsedMem = 0, 
-			ptrdiff_t Hint = 0)
+		void	setterConstructor(ptrdiff_t Reserve = 10, ptrdiff_t UsedMem = 0, ptrdiff_t Hint = 0)
 		{
 			_UsedMem = UsedMem;
 			_Reserve = Reserve;
@@ -79,7 +76,7 @@ namespace ft{
 			}
 		}
 	public:
-		//* constructor's / destructor
+//* constructor's / destructor
 		vector(){
 			setterConstructor();
 		}
@@ -93,7 +90,7 @@ namespace ft{
 				_Data[i] = val;
 		}
 		~vector(){_Alloc.deallocate(_Data, _Hint);}
-		//*	public methods
+//*	public methods
 		inline size_t	capacity()	const {return _Hint;}
 		inline size_t	size()		const {return _UsedMem;}
 		reference		operator [](ptrdiff_t i)		{return _Data[i];}
@@ -132,6 +129,7 @@ namespace ft{
 			oth._UsedMem = _UsedMem;
 			oth._Alloc = _Alloc;
 			oth._Data = _Data;
+
 			_Reserve = tmpReservedMinMem;
 			_Hint = tmpHitPoint;
 			_UsedMem = tmpUsedMem;
@@ -206,7 +204,7 @@ namespace ft{
 			ptrdiff_t	_UsedMem;
 			ptrdiff_t	_Iter;
 			int			_DirectionMove;
-			iterator_base(pointer data, ptrdiff_t usedMem, ptrdiff_t currentIter, int8_t dirMov)
+			iterator_base(pointer data, ptrdiff_t usedMem, ptrdiff_t currentIter, int dirMov)
 				: _Data(data), _UsedMem(usedMem), _Iter(currentIter), _DirectionMove(dirMov){}
 		public:
 			iterator_base()
@@ -239,8 +237,8 @@ namespace ft{
 				return *this;
 			}
 
-			bool operator>	(iterator_base const & oth){compare(oth); return _Iter >  oth._Iter;}
-			bool operator<	(iterator_base const & oth){compare(oth); return _Iter <  oth._Iter;}
+			bool operator>	(iterator_base const & oth){compare(oth); return _DirectionMove * _Iter >  _DirectionMove * oth._Iter;}
+			bool operator<	(iterator_base const & oth){compare(oth); return _DirectionMove * _Iter <  _DirectionMove * oth._Iter;}
 			bool operator==	(iterator_base const & oth){compare(oth); return _Iter == oth._Iter;}
 			bool operator!=	(iterator_base const & oth){return !operator==(oth);}
 			bool operator>=	(iterator_base const & oth){return !operator<(oth);}
@@ -254,7 +252,7 @@ namespace ft{
 			iterator_base	operator+=(const ptrdiff_t value) {_Iter += (_DirectionMove * value); return *this;}
 		};
 
-		public:
+	public:
 		class iterator: public iterator_base{
 		public:
 			iterator(): iterator_base(){}
@@ -273,7 +271,7 @@ namespace ft{
 			bool operator<=	(reverse_iterator const & oth){ return !operator>(oth);};
 		};
 
-	// * begin and end
+// * begin and end
 	reverse_iterator	rbegin(){return reverse_iterator(_Data, _UsedMem, _UsedMem -1);}
 	iterator			begin(){return iterator(_Data, _UsedMem, 0);}
 	reverse_iterator	rend(){return reverse_iterator(_Data, _UsedMem, -1);}
