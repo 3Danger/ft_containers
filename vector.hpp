@@ -150,19 +150,19 @@ namespace ft{
 		// 		push_back(*start++);
 		// 	}
 		// }
-		template<typename U, typename std::enable_if<std::is_integral<typename U::value, U>::type, U> >
-		void 	assign(U n, const_reference value){
-			if (n > _Hint){
-				_Alloc.deallocate(_Data, _Hint);
-				_Hint = max(n , _Reserve);
-				_Data = _Alloc.allocate(_Hint);
-				if (!_Data)
-					throw runtime_error(NO_MEM_SPACE);
-			}
-			for (ptrdiff_t i = 0; i < n; i++)
-				_Data[i] = value;
-			_UsedMem = n;
-		}
+		//template<typename U, typename std::enable_if<std::is_integral<typename U::value, U>::type, U> >
+		//void 	assign(U n, const_reference value){
+		//	if (n > _Hint){
+		//		_Alloc.deallocate(_Data, _Hint);
+		//		_Hint = max(n , _Reserve);
+		//		_Data = _Alloc.allocate(_Hint);
+		//		if (!_Data)
+		//			throw runtime_error(NO_MEM_SPACE);
+		//	}
+		//	for (ptrdiff_t i = 0; i < n; i++)
+		//		_Data[i] = value;
+		//	_UsedMem = n;
+		//}
 		void	reserve(ptrdiff_t n){
 			if (n > _Reserve){
 				_Reserve = n;
@@ -191,80 +191,86 @@ namespace ft{
 	private:
 		class iterator_base{
 		public:
+			typedef ptrdiff_t	difference_type;
 			typedef	T			value_type;
-			typedef	T&			reference;
-			// typedef	const T&	const_reference;
 			typedef	T*			pointer;
-			// typedef	const T*	const_pointer;
-		private:
+			typedef	T&			reference;
+			typedef	const T*	const_pointer;
+			typedef	const T&	const_reference;
+			typedef std::random_access_iterator_tag iterator_category;
+		protected:
 			friend class vector;
+			friend class iterator;
+			friend class reverse_iterator;
 			pointer		_Data;
-			ptrdiff_t	const _UsedMem;
+			ptrdiff_t	_UsedMem;
 			ptrdiff_t	_Iter;
-			iterator_base(pointer data, ptrdiff_t usedMem, ptrdiff_t currentIter)
-				: _Data(data), _UsedMem(usedMem), _Iter(currentIter){}
+			int			_DirectionMove;
+			iterator_base(pointer data, ptrdiff_t usedMem, ptrdiff_t currentIter, int8_t dirMov)
+				: _Data(data), _UsedMem(usedMem), _Iter(currentIter), _DirectionMove(dirMov){}
 		public:
 			iterator_base()
 				: _Data(NULL), _UsedMem(0), _Iter(0){}
-			iterator_base(iterator_base const & iter)
-				: _Data(iter._Data)
-				, _UsedMem(iter._UsedMem)
-				, _Iter(iter._Iter){}
+			iterator_base(iterator_base const & Iter)
+				: _Data(Iter._Data)
+				, _UsedMem(Iter._UsedMem)
+				, _Iter(Iter._Iter)
+				, _DirectionMove(Iter._DirectionMove){}
 			virtual ~iterator_base(){}
 			reference operator*(){
 				if (_Iter >= _UsedMem || _Iter < 0)
 					return _Data[_UsedMem - 1];
 				return _Data[_Iter];}
-		// * bool operator
 		private:
 			void	compare(iterator_base const & oth){
 				if (oth._Data != _Data)
 					throw runtime_error(NO_COMPARE_DATA);
 			}
 		public:
+			iterator_base operator++(void){ _Iter += _DirectionMove; return *this;}
+			iterator_base operator--(void){ _Iter -= _DirectionMove; return *this;}
+			iterator_base operator--(int){ iterator_base tmp(*this); --(*this); return tmp;}
+			iterator_base operator++(int){ iterator_base tmp(*this); ++(*this); return tmp;}
+			iterator_base operator=(const iterator_base & oth){
+				_DirectionMove = oth._DirectionMove;
+				_UsedMem = oth._UsedMem;
+				_Iter = oth._Iter;
+				_Data = oth._Data;
+				return *this;
+			}
+
 			bool operator>	(iterator_base const & oth){compare(oth); return _Iter >  oth._Iter;}
-			bool operator>=	(iterator_base const & oth){compare(oth); return _Iter >= oth._Iter;}
 			bool operator<	(iterator_base const & oth){compare(oth); return _Iter <  oth._Iter;}
-			bool operator<=	(iterator_base const & oth){compare(oth); return _Iter <= oth._Iter;}
 			bool operator==	(iterator_base const & oth){compare(oth); return _Iter == oth._Iter;}
-			bool operator!=	(iterator_base const & oth){compare(oth); return _Iter != oth._Iter;}
+			bool operator!=	(iterator_base const & oth){return !operator==(oth);}
+			bool operator>=	(iterator_base const & oth){return !operator<(oth);}
+			bool operator<=	(iterator_base const & oth){return !operator>(oth);}
+
+			iterator_base	operator-(const iterator_base & oth) const {return iterator_base(_Data, _UsedMem, _Iter - (_DirectionMove * oth._Iter), _DirectionMove);}
+			iterator_base	operator+(const iterator_base & oth) const {return iterator_base(_Data, _UsedMem, _Iter + (_DirectionMove * oth._Iter), _DirectionMove);}
+			iterator_base	operator-(const ptrdiff_t value) const {return iterator_base(_Data, _UsedMem, _Iter - (_DirectionMove * value), _DirectionMove);}
+			iterator_base	operator+(const ptrdiff_t value) const {return iterator_base(_Data, _UsedMem, _Iter + (_DirectionMove * value), _DirectionMove);}
+			iterator_base	operator-=(const ptrdiff_t value) {_Iter -= (_DirectionMove * value); return *this;}
+			iterator_base	operator+=(const ptrdiff_t value) {_Iter += (_DirectionMove * value); return *this;}
 		};
 
 		public:
 		class iterator: public iterator_base{
 		public:
 			iterator(): iterator_base(){}
-			iterator(pointer data, ptrdiff_t usedMem, ptrdiff_t iter): iterator_base(data, usedMem, iter){};
-			iterator operator++(void){ ++iterator::_Iter; return *this;}
-			iterator operator--(void){ --iterator::_Iter; return *this;}
-			iterator operator--(int){
-				iterator tmp(*this);
-				iterator_base::_Iter--;
-				return tmp;
-			}
-			iterator operator++(int){
-				iterator tmp(*this);
-				iterator_base::_Iter++;
-				return tmp;
-			}
+			iterator(pointer data, ptrdiff_t usedMem, ptrdiff_t iter): iterator_base(data, usedMem, iter, 1){};
+			iterator(const iterator_base & oth): iterator_base(oth._Data, oth._UsedMem, oth._Iter, oth._DirectionMove){}
 		};
 
 		class reverse_iterator: public iterator_base{
 		public:
 			reverse_iterator(): iterator_base(){}
-			reverse_iterator(pointer data, ptrdiff_t usedMem, ptrdiff_t iter): iterator_base(data, usedMem, iter){};
-			reverse_iterator operator++(void){ --iterator::_Iter; return *this;}
-			reverse_iterator operator--(void){ ++iterator::_Iter; return *this;}
-			reverse_iterator operator--(int){
-				reverse_iterator tmp(*this);
-				iterator_base::_Iter++;
-				return tmp;
-			}
-			reverse_iterator operator++(int){
-				reverse_iterator tmp(*this);
-				iterator_base::_Iter--;
-				return tmp;
-			}
+			reverse_iterator(pointer data, ptrdiff_t usedMem, ptrdiff_t iter): iterator_base(data, usedMem, iter, -1){};
+			reverse_iterator(const iterator_base & oth): iterator_base(oth._Data, oth._UsedMem, oth._Iter, oth._DirectionMove){}
+			bool operator>	(reverse_iterator const & oth){ return !iterator_base::operator>=(oth);};
+			bool operator<	(reverse_iterator const & oth){ return !iterator_base::operator<=(oth);};
+			bool operator>=	(reverse_iterator const & oth){ return !operator<(oth);};
+			bool operator<=	(reverse_iterator const & oth){ return !operator>(oth);};
 		};
 
 	// * begin and end
@@ -276,7 +282,7 @@ namespace ft{
 	const_reference		front() const	{
 		if (!_Data)
 			throw runtime_error(EX_DEF_NULL);
-		return _Data[			0];
+		return _Data[0];
 	}
 	const_reference		back()	const	{
 		if (!_Data)
@@ -286,7 +292,7 @@ namespace ft{
 	reference			front() 		{
 		if (!_Data)
 			throw runtime_error(EX_DEF_NULL);
-		return _Data[			0];
+		return _Data[0];
 	}
 	reference			back()			{
 		if (!_Data)
