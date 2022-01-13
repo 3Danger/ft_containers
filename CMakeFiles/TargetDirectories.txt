@@ -1,0 +1,3 @@
+/mnt/c/Users/Rasul/CLionProjects/Containeryyy/CMakeFiles/rebuild_cache.dir
+/mnt/c/Users/Rasul/CLionProjects/Containeryyy/CMakeFiles/edit_cache.dir
+/mnt/c/Users/Rasul/CLionProjects/Containeryyy/CMakeFiles/Containeryyy.dir
