@@ -25,28 +25,29 @@ int main( )
 	ft::vector<char>::iterator				fbeg;
 	ft::vector<char>::iterator				fend;
 
-	std::vector<char>::iterator				sbeg;
-	std::vector<char>::iterator				send;
+//	std::vector<char>::iterator				sbeg;
+//	std::vector<char>::iterator				send;
 
 	std::string str = "hello";
 
-//    ft::vector<char>						fvc(str.begin(), str.end());
 //	std::vector<char>						svc(str.begin(), str.end());
+    ft::vector<char>						fvc(str.begin(), str.end());
 
-	ft::vector<char>						fvc(12, '-');
-	std::vector<char>						svc(12, '+');
-
-	fbeg = fvc.begin();
-	fend = fvc.end();
-
-	sbeg = svc.begin();
-	send = svc.end();
-
+//	ft::vector<char>						fvc(12, '-');
+//	std::vector<char>						svc(12, '+');
+//
+//	svc.
+//	fbeg = fvc.begin();
+//	fend = fvc.end();
+//
+//	sbeg = svc.begin();
+//	send = svc.end();
+//
 	cout << "ft:\n";
 	for(int i = 0; fbeg != fend; ++fbeg)
 		cout << *fbeg << " - " << i++ << endl;
-
-	cout << "std:\n";
-	for(int i = 0; sbeg != send; ++sbeg)
-		cout << *sbeg << " - " << i++ << endl;
+//
+//	cout << "std:\n";
+//	for(int i = 0; sbeg != send; ++sbeg)
+//		cout << *sbeg << " - " << i++ << endl;
 }

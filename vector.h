@@ -9,6 +9,7 @@
 #include <memory>
 #include <string>
 #include <algorithm>
+#include "sfinae.h"
 
 using std::runtime_error;
 using std::allocator;
@@ -19,15 +20,6 @@ using std::max;
 
 #define IS_NEED_DOWN_REALLOC( Hint, UsedMem ) \
 ( (Hint - UsedMem) > (UsedMem + (UsedMem >> 2)) )
-
-//* ENABLE IF
-template <bool, typename T>
-struct _enable_if{};
-template <typename T>
-struct _enable_if<true, T>{typedef T type;};
-
-
-
 
 // * FT NAMESPACE
 namespace ft{
@@ -103,15 +95,26 @@ namespace ft{
 			setterConstructor();
             copyFrom(oth);
         }
+//		template <typename input_iterator>
+//		vector(input_iterator &begin, input_iterator &end,
+//			   typename _enable_if<...>::type * = NULL)/////////////////////
+//		{
+//			setterConstructor();
+//			std::cout << "random_iterator\n";
+//		}
+
 		template <typename InputIterator>
-		vector(InputIterator start, InputIterator finish, typename InputIterator::iterator_category * = NULL){
-//            setterConstructor(10, size, max(size << 1, _reserve));
+		vector(InputIterator start, InputIterator finish,
+			   typename enable_if<is_iterator<InputIterator>::value, InputIterator >::type * = NULL){
 			setterConstructor();
 			for(; start != finish; ++start)
 				push_back(*start);
         }
-        explicit vector(unsigned long size, value_type const & val = value_type()): _reserve(10){
-            setterConstructor(10, size, max(size << 1, _reserve));
+		template <typename integer>
+        vector(integer size, value_type const & val = value_type(),
+			   typename enable_if<is_integer<integer>::value, integer>::type * = NULL)
+							: _reserve(10){
+            setterConstructor(10, static_cast<ulong>(size), max(static_cast<ulong>(size) << 1, _reserve));
             for (unsigned long i = 0; i < size; i++)
                 _data[i] = val;
         }
