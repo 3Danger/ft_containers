@@ -51,78 +51,85 @@ namespace ft {
 
 // is integer
 	template<typename T>
-	struct is_integer {
+	struct is_no_const_integer {
 		static const bool value = false;
 	};
 	template<>
-	struct is_integer<int> {
+	struct is_no_const_integer<int> {
 		static const bool value = true;
 	};
 	template<>
-	struct is_integer<unsigned int> {
+	struct is_no_const_integer<unsigned int> {
 		static const bool value = true;
 	};
 	template<>
-	struct is_integer<char> {
+	struct is_no_const_integer<char> {
 		static const bool value = true;
 	};
 	template<>
-	struct is_integer<unsigned char> {
+	struct is_no_const_integer<unsigned char> {
 		static const bool value = true;
 	};
 	template<>
-	struct is_integer<long> {
+	struct is_no_const_integer<long> {
 		static const bool value = true;
 	};
 	template<>
-	struct is_integer<unsigned long> {
+	struct is_no_const_integer<unsigned long> {
 		static const bool value = true;
 	};
 	template<>
-	struct is_integer<long long> {
+	struct is_no_const_integer<long long> {
 		static const bool value = true;
 	};
 	template<>
-	struct is_integer<unsigned long long> {
+	struct is_no_const_integer<unsigned long long> {
 		static const bool value = true;
 	};
 
 // is integer const
 	template<typename T>
-	struct is_uinteger {
+	struct is_const_integer {
 		static const bool value = false;
 	};
 	template<>
-	struct is_uinteger<const int> {
+	struct is_const_integer<const int> {
 		static const bool value = true;
 	};
 	template<>
-	struct is_uinteger<const unsigned int> {
+	struct is_const_integer<const unsigned int> {
 		static const bool value = true;
 	};
 	template<>
-	struct is_uinteger<const char> {
+	struct is_const_integer<const char> {
 		static const bool value = true;
 	};
 	template<>
-	struct is_uinteger<const unsigned char> {
+	struct is_const_integer<const unsigned char> {
 		static const bool value = true;
 	};
 	template<>
-	struct is_uinteger<const long> {
+	struct is_const_integer<const long> {
 		static const bool value = true;
 	};
 	template<>
-	struct is_uinteger<const unsigned long> {
+	struct is_const_integer<const unsigned long> {
 		static const bool value = true;
 	};
 	template<>
-	struct is_uinteger<const long long> {
+	struct is_const_integer<const long long> {
 		static const bool value = true;
 	};
 	template<>
-	struct is_uinteger<const unsigned long long> {
+	struct is_const_integer<const unsigned long long> {
 		static const bool value = true;
+	};
+
+	template<typename T>
+	struct is_integer{
+		static const bool value = \
+		is_no_const_integer<T>::value \
+		|| is_const_integer<T>::value;
 	};
 
 
@@ -143,6 +150,9 @@ namespace ft {
 	struct is_float<long double> {
 		static const bool value = true;
 	};
+
+//	template <typename T>
+//	struct is_arithmetic_iterator
 
 }
 

@@ -2,6 +2,7 @@
 //#include <iterator>
 #include <vector>
 #include <string>
+#include <list>
 #include "vector.h"
 //#include <type_traits>
 
@@ -31,7 +32,8 @@ int main( )
 	std::string str = "hello";
 
 //	std::vector<char>						svc(str.begin(), str.end());
-    ft::vector<char>						fvc(str.begin(), str.end());
+    std::list<char>						slc(str.begin(), str.end());
+    ft::vector<char>						fvc(slc.begin(), slc.end());
 
 //	ft::vector<char>						fvc(12, '-');
 //	std::vector<char>						svc(12, '+');
@@ -44,9 +46,13 @@ int main( )
 //	send = svc.end();
 //
 	cout << "ft:\n";
-	for(int i = 0; fbeg != fend; ++fbeg)
-		cout << *fbeg << " - " << i++ << endl;
-//
+//	for(int i = 0; fbeg != fend; ++fbeg)
+//		cout << *fbeg << " - " << i++ << endl;
+	int x = fvc.end() - fvc.begin();
+	cout << x << endl;
+	for (int i = 0; i < x; ++i) {
+		cout << fvc[i] << endl;
+	}
 //	cout << "std:\n";
 //	for(int i = 0; sbeg != send; ++sbeg)
 //		cout << *sbeg << " - " << i++ << endl;

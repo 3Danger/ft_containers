@@ -18,6 +18,8 @@ using std::max;
 #define NO_COMPARE_data "exception: vector::iterator: data is not comparable!"
 #define EX_DEF_NULL "exeption: trying deference NULL"
 
+#define RESERVE_DEFAULT 10
+
 #define IS_NEED_DOWN_REALLOC( Hint, UsedMem ) \
 ( (Hint - UsedMem) > (UsedMem + (UsedMem >> 2)) )
 
@@ -34,16 +36,17 @@ namespace ft{
         typedef	T			value_type;
         typedef	T&			reference;
         typedef	T*			pointer;
+		typedef unsigned long	size_type;
     private:
-        unsigned long			_reserve;
-        unsigned long			_usedMem;
-        unsigned long			_hint;
+        size_type			_reserve;
+        size_type			_usedMem;
+        size_type			_hint;
 //        Allocator               _alloc;
 		std::allocator<T>		_alloc;
         pointer			        _data;
     private:
         //* private methods
-        void	setterConstructor(unsigned long Reserve = 10, unsigned long UsedMem = 0, unsigned long Hint = 0)
+        void	setterConstructor(size_type Reserve = RESERVE_DEFAULT, size_type UsedMem = 0, size_type Hint = 0)
         {
             _usedMem = UsedMem;
             _reserve = Reserve;
@@ -55,8 +58,8 @@ namespace ft{
             } else
                 _data = NULL;
         }
-        void	reallocate(unsigned long size, const_reference val = T(), bool mod_2x = false){
-            unsigned long		newSize = size;
+        void	reallocate(size_type size, const_reference val = T(), bool mod_2x = false){
+            size_type		newSize = size;
             value_type *	tmpData;
 
             if (mod_2x)
@@ -83,7 +86,7 @@ namespace ft{
             _usedMem = oth._usedMem;
             if (_usedMem > 0){
                 _data = _alloc.allocate(_hint);
-                for (unsigned long i = 0; i < _usedMem; i++)
+                for (size_type i = 0; i < _usedMem; i++)
                     _data[i] = oth._data[i];
             }
         }
@@ -105,32 +108,54 @@ namespace ft{
 
 		template <typename InputIterator>
 		vector(InputIterator start, InputIterator finish,
-			   typename enable_if<is_iterator<InputIterator>::value, InputIterator >::type * = NULL){
+			   typename enable_if<is_input_iterator<InputIterator>::value, InputIterator >::type * = NULL){
 			setterConstructor();
 			for(; start != finish; ++start)
 				push_back(*start);
         }
+		// * random_access !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		template <typename random_access_iterator>
+		vector(random_access_iterator start, random_access_iterator finish,
+			   typename enable_if<is_random_access_iterator<random_access_iterator>::value && !is_input_iterator<random_access_iterator>::value, random_access_iterator >::type * = NULL){
+			size_type hint = finish - start;
+			setterConstructor(RESERVE_DEFAULT, 0, hint);
+			for(; start != finish; ++start)
+				push_back(*start);
+        }
+		template <typename _Iterator>
+		vector(_Iterator start, _Iterator finish,
+			   typename enable_if<
+					   is_iterator<_Iterator>::value &&
+					   !is_random_access_iterator<_Iterator>::value &&
+					   !is_input_iterator<_Iterator>::value, _Iterator
+					   >::type * = NULL){
+			size_type hint = std::distance(start, finish);
+			setterConstructor(RESERVE_DEFAULT, 0, hint);
+			for(; start != finish; ++start)
+				push_back(*start);
+        }
+
 		template <typename integer>
         vector(integer size, value_type const & val = value_type(),
 			   typename enable_if<is_integer<integer>::value, integer>::type * = NULL)
 							: _reserve(10){
             setterConstructor(10, static_cast<ulong>(size), max(static_cast<ulong>(size) << 1, _reserve));
-            for (unsigned long i = 0; i < size; i++)
+            for (size_type i = 0; i < size; i++)
                 _data[i] = val;
         }
         ~vector(){_alloc.deallocate(_data, _hint);}
 //*	public methods
         inline size_t	capacity()	const {return _hint;}
         inline size_t	size()		const {return _usedMem;}
-        reference		operator [](unsigned long i)		{return _data[i];}
-        const_reference	operator [](unsigned long i) const	{return _data[i];}
+        reference		operator [](size_type i)		{return _data[i];}
+        const_reference	operator [](size_type i) const	{return _data[i];}
         inline void		clean()		{_usedMem = 0;}
-        reference		at(unsigned long i){
+        reference		at(size_type i){
             if (i >= _usedMem || i < 0 || !_data)
                 throw std::out_of_range("vector");
             return this->operator[](i);
         }
-        const_reference	at(unsigned long i) const{
+        const_reference	at(size_type i) const{
             if (i >= _usedMem || i < 0 || !_data)
                 throw std::out_of_range("vector");
             return this->operator[](i);
@@ -147,10 +172,10 @@ namespace ft{
             _data[_usedMem++] = value;
         }
         void	swap(ft::vector<T> & oth){
-            unsigned long tmpReservedMinMem = oth._reserve;
+            size_type tmpReservedMinMem = oth._reserve;
             Allocator tmpAlloc = oth._alloc;
-            unsigned long tmpHitPoint = oth._hint;
-            unsigned long tmpUsedMem = oth._usedMem;
+            size_type tmpHitPoint = oth._hint;
+            size_type tmpUsedMem = oth._usedMem;
             pointer tmpData = oth._data;
 
             oth._reserve = _reserve;
@@ -172,7 +197,7 @@ namespace ft{
 				push_back(*start);
 			}
 		}
-        void assign(unsigned long n, value_type value){
+        void assign(size_type n, value_type value){
             if (n > _hint){
                 if (_data)
                     _alloc.deallocate(_data, _hint);
@@ -181,11 +206,11 @@ namespace ft{
                 if (!_data)
                     throw runtime_error(NO_MEM_SPACE);
             }
-            for (unsigned long i = 0; i < n; i++)
+            for (size_type i = 0; i < n; i++)
                 _data[i] = value;
             _usedMem = n;
         }
-        void	reserve(unsigned long n){
+        void	reserve(size_type n){
             if (n > _reserve){
                 _reserve = n;
                 return ;
@@ -193,7 +218,7 @@ namespace ft{
             _reserve = n;
             reallocate(n);
         }
-        void	resize(unsigned long n, const_reference val = T()){
+        void	resize(size_type n, const_reference val = T()){
             if (n < 0 && n > _alloc.max_size())
                 throw runtime_error("э, пошол отсюда!!! что за ресайз??");
             else if (n == 0){
@@ -213,7 +238,7 @@ namespace ft{
 	public:
         class iterator {
 		public:
-			typedef unsigned long difference_type;
+			typedef size_type difference_type;
 			typedef T value_type;
 			typedef T *pointer;
 			typedef T &reference;
@@ -227,7 +252,7 @@ namespace ft{
 			long _usedMem;
 			long _iter;
 
-			iterator(pointer data, unsigned long usedMem, unsigned long currentIter)
+			iterator(pointer data, size_type usedMem, size_type currentIter)
 					: _data(data), _usedMem(usedMem), _iter(currentIter) {}
 
 		public:
@@ -284,6 +309,23 @@ namespace ft{
 				return *this;
 			}
 
+			size_type
+			operator+(const iterator & oth){return _iter + oth._iter;}
+			size_type
+			operator-(const iterator & oth){return _iter - oth._iter;}
+
+			template <typename integer>
+			iterator operator+(
+					typename enable_if<is_integer<integer>::value, integer >::type num) const {
+				return iterator(_data, _usedMem, _iter + num);
+			}
+			template <typename integer>
+			iterator operator-(
+					typename enable_if<is_integer<integer>::value, integer >::type num) const {
+				return iterator(_data, _usedMem, _iter - num);
+			}
+
+
 			iterator &operator=(const iterator &oth) {
 				_usedMem = oth._usedMem;
 				_iter = oth._iter;
@@ -293,7 +335,7 @@ namespace ft{
 		};
 		class reverse_iterator {
 		public:
-			typedef unsigned long difference_type;
+			typedef size_type difference_type;
 			typedef T value_type;
 			typedef T *pointer;
 			typedef T &reference;
@@ -307,7 +349,7 @@ namespace ft{
 			long _usedMem;
 			long _iter;
 
-			reverse_iterator(pointer data, unsigned long usedMem, unsigned long currentIter)
+			reverse_iterator(pointer data, size_type usedMem, size_type currentIter)
 					: _data(data), _usedMem(usedMem), _iter(currentIter) {}
 
 		public:
@@ -368,6 +410,25 @@ namespace ft{
 				++(*this);
 				return tmp;
 			}
+
+
+			size_type
+			operator+(const reverse_iterator & oth){return _iter + oth._iter;}
+			size_type
+			operator-(const reverse_iterator & oth){return _iter - oth._iter;}
+
+			template <typename integer>
+			reverse_iterator operator+(
+					typename enable_if<is_integer<integer>::value, integer >::type num) const {
+				return reverse_iterator(_data, _usedMem, _iter + num);
+			}
+			template <typename integer>
+			reverse_iterator operator-(
+					typename enable_if<is_integer<integer>::value, integer >::type num) const {
+				return reverse_iterator(_data, _usedMem, _iter - num);
+			}
+
+
 
 			reverse_iterator &operator=(const reverse_iterator &oth) {
 				_usedMem = oth._usedMem;
