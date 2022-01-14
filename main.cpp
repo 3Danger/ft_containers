@@ -1,35 +1,52 @@
 #include <iostream>
 //#include <iterator>
-//#include <stack>
-//#include <deque>
-//#include <list>
-//#include <vector>
+#include <vector>
+#include <string>
 #include "vector.h"
 //#include <type_traits>
 
-using namespace ft;
+//#include <stack>
+//#include <deque>
+//#include <list>
+//using namespace ft;
+//using namespace std;
 using std::cout;
 using std::endl;
 
+
+//template<bool B, class T = void>
+//struct e_if {};
+//
+//template<class T>
+//struct e_if<true, T> { typedef T type; };
+
 int main( )
 {
-    vector<int>						vc;
-	vector<int>::iterator			beg;
-	vector<int>::iterator			end;
-	vector<int>::reverse_iterator	rbeg;
-	vector<int>::reverse_iterator	rend;
+	ft::vector<char>::iterator				fbeg;
+	ft::vector<char>::iterator				fend;
 
-	vc.assign(4,7);
-//    for (int i = 0; i < 5; ++i) {
-//        vc.push_back(i * 1.5 - 1);
-//    }
-	beg = vc.begin();
-	end = vc.end();
-	while (!(beg >= end))
-		cout << *(beg++) << endl;
-	cout << "reverse" << endl;
-	rbeg = vc.rbegin();
-	rend = vc.rend();
-	while(!(rbeg >= rend))
-		cout << *rbeg++ << endl;
+	std::vector<char>::iterator				sbeg;
+	std::vector<char>::iterator				send;
+
+	std::string str = "hello";
+
+//    ft::vector<char>						fvc(str.begin(), str.end());
+//	std::vector<char>						svc(str.begin(), str.end());
+
+	ft::vector<char>						fvc(12, '-');
+	std::vector<char>						svc(12, '+');
+
+	fbeg = fvc.begin();
+	fend = fvc.end();
+
+	sbeg = svc.begin();
+	send = svc.end();
+
+	cout << "ft:\n";
+	for(int i = 0; fbeg != fend; ++fbeg)
+		cout << *fbeg << " - " << i++ << endl;
+
+	cout << "std:\n";
+	for(int i = 0; sbeg != send; ++sbeg)
+		cout << *sbeg << " - " << i++ << endl;
 }

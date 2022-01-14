@@ -22,9 +22,9 @@ using std::max;
 
 //* ENABLE IF
 template <bool, typename T>
-struct switch_if{};
+struct _enable_if{};
 template <typename T>
-struct switch_if<true, T>{typedef T type;};
+struct _enable_if<true, T>{typedef T type;};
 
 
 
@@ -103,7 +103,14 @@ namespace ft{
 			setterConstructor();
             copyFrom(oth);
         }
-        vector(unsigned long size, value_type const & val = value_type()){
+		template <typename InputIterator>
+		vector(InputIterator start, InputIterator finish, typename InputIterator::iterator_category * = NULL){
+//            setterConstructor(10, size, max(size << 1, _reserve));
+			setterConstructor();
+			for(; start != finish; ++start)
+				push_back(*start);
+        }
+        explicit vector(unsigned long size, value_type const & val = value_type()): _reserve(10){
             setterConstructor(10, size, max(size << 1, _reserve));
             for (unsigned long i = 0; i < size; i++)
                 _data[i] = val;
@@ -155,16 +162,14 @@ namespace ft{
             _alloc = tmpAlloc;
             _data = tmpData;
         }
-//		template <class InputIterator>
-//		typename switch_if<std::__is_input_iterator<InputIterator>::value, void>::type *
-//		assign(InputIterator start, InputIterator finish){
-//			while(start != finish){
-//				push_back(*start++);
-//			}
-//			return NULL;
-//		}
-        void
-        assign(unsigned long n, value_type value){
+//		typename _enable_if<std::__is_input_iterator<InputIterator>::value, void>::type *
+		template <typename InputIterator>
+		void assign(InputIterator start, InputIterator finish, typename InputIterator::iterator_category * = NULL){
+			for(;start != finish; ++start){
+				push_back(*start);
+			}
+		}
+        void assign(unsigned long n, value_type value){
             if (n > _hint){
                 if (_data)
                     _alloc.deallocate(_data, _hint);
