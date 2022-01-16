@@ -51,6 +51,9 @@ namespace ft{
             _usedMem = UsedMem;
             _reserve = Reserve;
             _hint = Hint;
+
+			if (_hint < 0)
+				throw std::out_of_range("vector");
             if (Hint > 0){
                 _data = _alloc.allocate(_hint);
                 if (!_data)
@@ -71,17 +74,31 @@ namespace ft{
                 _usedMem = size;
             for (ssize_t i = _usedMem - 1; i >= 0; i--)
                 tmpData[i] = _data[i];
-            for (ssize_t i = max(size, _reserve) - 1; i >= _usedMem; i--)
-                tmpData[i] = val;
+			if (&val)
+            	for (ssize_t i = max(size, _reserve) - 1; i >= _usedMem; i--)
+                	tmpData[i] = val;
             _alloc.deallocate(_data, _hint);
             _data = tmpData;
             _hint = newSize;
         }
+
+		void delete_data(){
+			if (_data) {
+				_alloc.deallocate(_data, _hint);
+				_data = NULL;
+				_hint = 0;
+			}
+		}
+
+		void new_data(size_type n){
+			_hint = max(n , _reserve);
+			_data = _alloc.allocate(_hint);
+			if (!_data)
+				throw runtime_error(NO_MEM_SPACE);
+		}
+
         void copyFrom(ft::vector<T> const & oth){
-            if (_data){
-                _alloc.deallocate(_data, _hint);
-                _data = NULL;
-            }
+            delete_data();
             _hint =	oth._hint;
             _usedMem = oth._usedMem;
             if (_usedMem > 0){
@@ -90,7 +107,7 @@ namespace ft{
                     _data[i] = oth._data[i];
             }
         }
-		void	checkData(){if (!_data) throw runtime_error(EX_DEF_NULL);}
+		void	checkData(){if (!_data) throw std::out_of_range(EX_DEF_NULL);}
     public:
 //* constructor's / destructor
         vector(){setterConstructor();}
@@ -98,55 +115,68 @@ namespace ft{
 			setterConstructor();
             copyFrom(oth);
         }
-//		template <typename input_iterator>
-//		vector(input_iterator &begin, input_iterator &end,
-//			   typename _enable_if<...>::type * = NULL)/////////////////////
-//		{
-//			setterConstructor();
-//			std::cout << "random_iterator\n";
-//		}
-
+		// * input_iterator constructor
 		template <typename InputIterator>
 		vector(InputIterator start, InputIterator finish,
-			   typename enable_if<is_input_iterator<InputIterator>::value, InputIterator >::type * = NULL){
+			   typename enable_if<is_input_iterator<typename InputIterator::iterator_category>::value, void *>::type * = NULL){
 			setterConstructor();
 			for(; start != finish; ++start)
 				push_back(*start);
         }
-		// * random_access !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		template <typename random_access_iterator>
-		vector(random_access_iterator start, random_access_iterator finish,
-			   typename enable_if<is_random_access_iterator<random_access_iterator>::value && !is_input_iterator<random_access_iterator>::value, random_access_iterator >::type * = NULL){
-			size_type hint = finish - start;
-			setterConstructor(RESERVE_DEFAULT, 0, hint);
-			for(; start != finish; ++start)
-				push_back(*start);
-        }
+		// * some_iterators constructor
 		template <typename _Iterator>
 		vector(_Iterator start, _Iterator finish,
-			   typename enable_if<
-					   is_iterator<_Iterator>::value &&
-					   !is_random_access_iterator<_Iterator>::value &&
-					   !is_input_iterator<_Iterator>::value, _Iterator
-					   >::type * = NULL){
+			   typename enable_if<!is_input_iterator<typename _Iterator::iterator_category>::value, void **>::type * = NULL){
 			size_type hint = std::distance(start, finish);
 			setterConstructor(RESERVE_DEFAULT, 0, hint);
 			for(; start != finish; ++start)
 				push_back(*start);
         }
 
-		template <typename integer>
-        vector(integer size, value_type const & val = value_type(),
-			   typename enable_if<is_integer<integer>::value, integer>::type * = NULL)
-							: _reserve(10){
-            setterConstructor(10, static_cast<ulong>(size), max(static_cast<ulong>(size) << 1, _reserve));
-            for (size_type i = 0; i < size; i++)
-                _data[i] = val;
+        vector(size_type n, const_reference val){
+            setterConstructor(RESERVE_DEFAULT, static_cast<ulong>(n), max(static_cast<ulong>(n << 1), static_cast<ulong>(RESERVE_DEFAULT)));
+			for (size_type i = 0; i < n; i++)
+				_data[i] = val;
         }
+        vector(size_type n){
+            setterConstructor(RESERVE_DEFAULT, 0, max(static_cast<ulong>(n << 1), static_cast<ulong>(RESERVE_DEFAULT)));
+        }
+//		template <typename _integer1, typename _integer2>
+//        vector(typename enable_if<is_integer<_integer1>::value, _integer1>::type size,
+//				value_type val): _reserve(10){
+//            setterConstructor(10, static_cast<ulong>(size), max(static_cast<ulong>(size) << 1, _reserve));
+//            for (size_type i = 0; i < size; i++)
+//                _data[i] = val;
+//        }
+
+//		template <typename _integer1, typename _integer2>
+//        vector(typename enable_if<is_integer<_integer1>::value, _integer1>::type size,
+//			   typename enable_if<is_integer<_integer2>::value, _integer2>::type val,
+//			   typename enable_if<is_integer<value_type>::value, void **>::type * = NULL): _reserve(10){
+//            setterConstructor(10, static_cast<ulong>(size), max(static_cast<ulong>(size) << 1, _reserve));
+//            for (size_type i = 0; i < size; i++)
+//                _data[i] = val;
+//        }
+//		template <typename _integer>
+//        vector(_integer size,typename enable_if<!is_integer<value_type>::value, value_type>::type val): _reserve(10){
+//            setterConstructor(10, static_cast<ulong>(size), max(static_cast<ulong>(size) << 1, _reserve));
+//            for (size_type i = 0; i < size; i++)
+//                _data[i] = val;
+//        }
+//		template <typename _integer>
+//        vector(typename enable_if<is_integer<_integer>::value, _integer >::type size): _reserve(10){
+//			value_type val;
+//            setterConstructor(10, static_cast<ulong>(size), max(static_cast<ulong>(size) << 1, _reserve));
+//            for (size_type i = 0; i < size; i++)
+//                _data[i] = val;
+//        }
+
         ~vector(){_alloc.deallocate(_data, _hint);}
 //*	public methods
-        inline size_t	capacity()	const {return _hint;}
-        inline size_t	size()		const {return _usedMem;}
+        inline size_type	capacity()	const {return _hint;}
+        inline size_type	size()		const {return _usedMem;}
+		inline bool			empty()		const {return !_usedMem || !_data;}
+		size_type			max_size()	const {return _alloc.max_size();}
         reference		operator [](size_type i)		{return _data[i];}
         const_reference	operator [](size_type i) const	{return _data[i];}
         inline void		clean()		{_usedMem = 0;}
@@ -160,7 +190,7 @@ namespace ft{
                 throw std::out_of_range("vector");
             return this->operator[](i);
         }
-        void	push_back(const value_type & value){
+        void			push_back(const value_type & value){
             if (!_data){
                 _hint = _reserve;
                 _data = _alloc.allocate(_hint);
@@ -171,7 +201,7 @@ namespace ft{
             }
             _data[_usedMem++] = value;
         }
-        void	swap(ft::vector<T> & oth){
+        void			swap(ft::vector<T> & oth){
             size_type tmpReservedMinMem = oth._reserve;
             Allocator tmpAlloc = oth._alloc;
             size_type tmpHitPoint = oth._hint;
@@ -190,35 +220,41 @@ namespace ft{
             _alloc = tmpAlloc;
             _data = tmpData;
         }
-//		typename _enable_if<std::__is_input_iterator<InputIterator>::value, void>::type *
-		template <typename InputIterator>
-		void assign(InputIterator start, InputIterator finish, typename InputIterator::iterator_category * = NULL){
+		// assign with input_iterator
+		template <typename input_itertor>
+		void assign(input_itertor start, input_itertor finish,
+					typename enable_if<is_input_iterator<input_itertor>::value , input_itertor>::type * = NULL){
+			std::cout << "input_iterator" << std::endl;
+			_usedMem = 0;
 			for(;start != finish; ++start){
 				push_back(*start);
 			}
 		}
-        void assign(size_type n, value_type value){
+		// assign with random_access_iterator
+		template <typename _iter>
+		void assign(_iter start, _iter finish,
+					typename enable_if<!is_input_iterator<typename _iter::iterator_category>::value, _iter >::type * = NULL){
+			size_type len = std::distance(start, finish);
+			if (len > _hint) {
+				delete_data();
+				new_data(len);
+			}
+			_usedMem = 0;
+			while(_usedMem < len)
+				_data[_usedMem++] = *start++;
+		}
+		// assign with integer & T parameter
+        void assign(size_type n, const_reference value){
             if (n > _hint){
-                if (_data)
-                    _alloc.deallocate(_data, _hint);
-                _hint = max(n , _reserve);
-                _data = _alloc.allocate(_hint);
-                if (!_data)
-                    throw runtime_error(NO_MEM_SPACE);
+                delete_data();
+				new_data(n);
             }
-            for (size_type i = 0; i < n; i++)
-                _data[i] = value;
+			for (size_type i = 0; i < n; i++)
+				_data[i] = value;
             _usedMem = n;
         }
-        void	reserve(size_type n){
-            if (n > _reserve){
-                _reserve = n;
-                return ;
-            }
-            _reserve = n;
-            reallocate(n);
-        }
-        void	resize(size_type n, const_reference val = T()){
+
+        void	resize(size_type n, const_reference val){
             if (n < 0 && n > _alloc.max_size())
                 throw runtime_error("э, пошол отсюда!!! что за ресайз??");
             else if (n == 0){
@@ -411,7 +447,6 @@ namespace ft{
 				return tmp;
 			}
 
-
 			size_type
 			operator+(const reverse_iterator & oth){return _iter + oth._iter;}
 			size_type
@@ -427,8 +462,6 @@ namespace ft{
 					typename enable_if<is_integer<integer>::value, integer >::type num) const {
 				return reverse_iterator(_data, _usedMem, _iter - num);
 			}
-
-
 
 			reverse_iterator &operator=(const reverse_iterator &oth) {
 				_usedMem = oth._usedMem;
@@ -447,6 +480,36 @@ namespace ft{
         const_reference		back()	const	{this->checkData(); return _data[_usedMem -1];}
         reference			front() 		{this->checkData(); return _data[0];}
         reference			back()			{this->checkData(); return _data[_usedMem -1];}
+
+	private:
+		bool	_insert(size_type pos, const_reference value){
+			if (_data && _usedMem < _hint){
+				for (size_type i = _hint -1; i <= pos ; --i) {
+					_data[i + 1] = _data[i];
+				}
+				_data[pos] = value;
+				_usedMem++;
+				return true;
+			}
+			return false;
+		}
+	public:
+		iterator	insert(iterator & pos, const_reference value){
+			if (!_data || !_usedMem)
+				push_back(value);
+			else if (!_insert(pos._iter, value)) {
+				if (pos._iter >= _hint){
+					push_back(value);
+				}else{
+					reallocate(_usedMem, NULL, true);
+					for(size_type i = _hint - 1; i > pos._iter; --i) {
+						_data[i + 1] = _data[i];
+					}
+					_data[pos->iter] = value;
+					_usedMem++;
+				}
+			}
+		}
     };
 };
 

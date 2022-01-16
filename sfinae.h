@@ -5,6 +5,8 @@
 #ifndef CONTAINERYYY_SFINAE_H
 #define CONTAINERYYY_SFINAE_H
 
+#include <iterator>
+
 namespace ft {
 //* ENABLE IF
 	template<bool, typename T>
@@ -21,31 +23,21 @@ namespace ft {
 	template <typename T>
 	struct is_same<T, T>{static const bool value = true;};
 
-	template <typename T>
+	template <typename iterator_category>
 	struct is_random_access_iterator{
-		static const bool value = is_same<typename T::iterator_category, std::random_access_iterator_tag>::value;
+		static const bool value = is_same<iterator_category, std::random_access_iterator_tag>::value;
 	};
-	template <typename T>
+	template <typename iterator_category>
 	struct is_input_iterator{
-		static const bool value = is_same<typename T::iterator_category, std::input_iterator_tag>::value;
+		static const bool value = is_same<iterator_category, std::input_iterator_tag>::value;
 	};
-	template <typename T>
+	template <typename iterator_category>
 	struct is_forward_iteraor{
-		static const bool value = is_same<typename T::iterator_category, std::forward_iterator_tag>::value;
+		static const bool value = is_same<iterator_category, std::forward_iterator_tag>::value;
 	};
-	template <typename T>
+	template <typename iterator_category>
 	struct is_bidirectional_iterator{
-		static const bool value = is_same<typename T::iterator_category, std::bidirectional_iterator_tag>::value;
-	};
-
-	template <typename T>
-	struct is_iterator{
-		static const bool value = \
-		is_random_access_iterator<T>::value \
-		|| is_input_iterator<T>::value \
-		|| is_input_iterator<T>::value \
-		|| is_forward_iteraor<T>::value \
-		|| is_bidirectional_iterator<T>::value;
+		static const bool value = is_same<iterator_category, std::bidirectional_iterator_tag>::value;
 	};
 
 
@@ -127,11 +119,8 @@ namespace ft {
 
 	template<typename T>
 	struct is_integer{
-		static const bool value = \
-		is_no_const_integer<T>::value \
-		|| is_const_integer<T>::value;
+		static const bool value = is_no_const_integer<T>::value || is_const_integer<T>::value;
 	};
-
 
 // is floating num
 	template<typename T>
