@@ -255,7 +255,7 @@ namespace ft{
 		}
 		// * iterators
 	public:
-		class iterator {
+		class const_iterator {
 		public:
 			typedef size_type difference_type;
 			typedef T value_type;
@@ -271,81 +271,102 @@ namespace ft{
 			long _usedMem;
 			long _iter;
 
-			iterator(pointer data, size_type usedMem, size_type currentIter)
+			const_iterator(pointer data, size_type usedMem, size_type currentIter)
 					: _data(data), _usedMem(usedMem), _iter(currentIter) {}
 
 		public:
-			iterator()
+			const_iterator(size_type num)
+					: _data(NULL), _usedMem(0), _iter(num) {}
+			const_iterator()
 					: _data(NULL), _usedMem(0), _iter(0) {}
 
-			iterator(iterator const &Iter)
+			const_iterator(const_iterator const &Iter)
 					: _data(Iter._data), _usedMem(Iter._usedMem), _iter(Iter._iter) {}
 
 		private:
-			void compare(iterator const &oth) {
+			void compare(const_iterator const &oth) {
 				if (oth._data != _data)
 					throw runtime_error(NO_COMPARE_data);
 			}
 
 		public:
-			reference operator*() {
+			const_pointer	operator->(){return &const_iterator::_data[const_iterator::_iter];}
+			const_reference operator*() const{
 				if (_iter >= _usedMem || _iter < 0)
 					return _data[_usedMem - 1];
 				return _data[_iter];
 			}
+			const_reference	operator[](size_type num){
+				if (num < 0 || num >= _usedMem)
+					return _data[_usedMem - 1];
+				return _data[num];
+			}
 
-			bool operator< (const iterator &rhs) const { return _iter <	 rhs._iter; }
-			bool operator==(const iterator &rhs) const { return _iter == rhs._iter; }
-			bool operator!=(const iterator &rhs) const { return _iter != rhs._iter; }
-			bool operator> (const iterator &rhs) const { return _iter >	 rhs._iter; }
-			bool operator<=(const iterator &rhs) const { return _iter <= rhs._iter; }
-			bool operator>=(const iterator &rhs) const { return _iter >= rhs._iter; }
+			bool operator< (const const_iterator &rhs) const { return _iter <	 rhs._iter; }
+			bool operator==(const const_iterator &rhs) const { return _iter == rhs._iter; }
+			bool operator!=(const const_iterator &rhs) const { return _iter != rhs._iter; }
+			bool operator> (const const_iterator &rhs) const { return _iter >	 rhs._iter; }
+			bool operator<=(const const_iterator &rhs) const { return _iter <= rhs._iter; }
+			bool operator>=(const const_iterator &rhs) const { return _iter >= rhs._iter; }
 
-			iterator operator--(int) {
-				iterator tmp(*this);
+			const_iterator operator--(int) {
+				const_iterator tmp(*this);
 				--_iter;
 				return tmp;
 			}
 
-			iterator operator++(int) {
-				iterator tmp(*this);
+			const_iterator operator++(int) {
+				const_iterator tmp(*this);
 				++_iter;
 				return tmp;
 			}
 
-			iterator &operator++() {
+			const_iterator &operator++() {
 				_iter++;
 				return *this;
 			}
 
-			iterator &operator--() {
+			const_iterator &operator--() {
 				_iter--;
 				return *this;
 			}
 
-			size_type
-			operator+(const iterator & oth){return _iter + oth._iter;}
-			size_type
-			operator-(const iterator & oth){return _iter - oth._iter;}
+			friend const_iterator operator-(const const_iterator & it1, const const_iterator & it2);
+			friend const_iterator operator+(const const_iterator & it1, const const_iterator & it2);
 
-			template <typename integer>
-			iterator operator+(
-					typename enable_if<is_integer<integer>::value, integer >::type num) const {
-				return iterator(_data, _usedMem, _iter + num);
-			}
-			template <typename integer>
-			iterator operator-(
-					typename enable_if<is_integer<integer>::value, integer >::type num) const {
-				return iterator(_data, _usedMem, _iter - num);
-			}
-
-			iterator &operator=(const iterator &oth) {
-				_usedMem = oth._usedMem;
-				_iter = oth._iter;
-				_data = oth._data;
+			const_iterator &operator+=(size_type const num){_iter += num; return *this;}
+			const_iterator &operator-=(size_type const num){_iter -= num; return *this;}
+			const_iterator &operator=(const const_iterator &oth) {
+				const_iterator::_usedMem = oth._usedMem;
+				const_iterator::_iter = oth._iter;
+				const_iterator::_data = oth._data;
 				return *this;
 			}
+
+			const_iterator &operator+(const const_iterator & oth){return _iter + oth._iter;}
+			const_iterator &operator-(const const_iterator & oth){return _iter - oth._iter;}
 		};
+
+		class iterator:public const_iterator{
+			friend class ft::vector<T>;
+			iterator(pointer data, size_type usedMem, size_type iter): const_iterator(data, usedMem, iter){}
+		public:
+			iterator(){}
+			iterator(const_iterator const & oth): const_iterator(oth){}
+			reference operator*() {
+				if (const_iterator::_iter >= const_iterator::_usedMem || const_iterator::_iter < 0)
+					return const_iterator::_data[_usedMem - 1];
+				return const_iterator::_data[const_iterator::_iter];
+			}
+			pointer	operator->(){return &const_iterator::_data[const_iterator::_iter];}
+			reference &operator[](size_type const num){
+				if (num < 0) 
+					throw std::out_of_range("iterator[]");
+				return _data[const_iterator::_iter];		
+			}
+		};
+
+
 		class reverse_iterator {
 		public:
 			typedef size_type difference_type;
@@ -431,6 +452,8 @@ namespace ft{
 				return *this;
 			}
 		};
+
+
 // * begin and end
 		reverse_iterator	rbegin(){return reverse_iterator(_data, _usedMem, _usedMem -1);}
 		iterator			begin(){return iterator(_data, _usedMem, 0);}
@@ -473,5 +496,22 @@ namespace ft{
 		}
 	};
 };
+
+template <typename T>
+typename ft::vector<T>::const_iterator operator+(
+	const typename  ft::vector<T>::const_iterator & it1, 
+	const typename  ft::vector<T>::const_iterator & it2) {
+	it1._data = it2._data;
+	it1._usedMem = it2._usedMem;
+	return it1 + it2;
+}
+template <typename T>
+typename ft::vector<T>::const_iterator operator-(
+	const typename  ft::vector<T>::const_iterator & it1, 
+	const typename  ft::vector<T>::const_iterator & it2) {
+	it1._data = it2._data;
+	it1._usedMem = it2._usedMem;
+	return it1 - it2;
+}
 
 #endif //CONTAINERYYY_VECTOR_H
