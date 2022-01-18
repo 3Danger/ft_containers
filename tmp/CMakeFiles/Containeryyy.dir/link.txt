@@ -1,1 +1,0 @@
-/usr/bin/c++  -g   CMakeFiles/Containeryyy.dir/main.cpp.o  -o Containeryyy 

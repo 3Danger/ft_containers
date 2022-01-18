@@ -9,7 +9,7 @@
 #include <memory>
 #include <string>
 #include <algorithm>
-#include "sfinae.h"
+#include "sfinae.hpp"
 
 using std::runtime_error;
 using std::allocator;
@@ -20,8 +20,8 @@ using std::max;
 
 #define RESERVE_DEFAULT 10
 
-#define IS_NEED_DOWN_REALLOC( Hint, UsedMem ) \
-( (Hint - UsedMem) > (UsedMem + (UsedMem >> 2)) )
+#define IS_ITERATOR(IS_TYPE, THIS_TYPE)\
+typename enable_if<IS_TYPE<typename THIS_TYPE::iterator_category>::value, THIS_TYPE >::type
 
 // * FT NAMESPACE
 namespace ft{
@@ -30,13 +30,14 @@ namespace ft{
 //        friend class		iterator;
 //        friend class		reverse_iterator;
     public:
-        typedef Allocator	allocator_type;
-        typedef	const T&	const_reference;
-        typedef	const T*	const_pointer;
-        typedef	T			value_type;
-        typedef	T&			reference;
-        typedef	T*			pointer;
-		typedef unsigned long	size_type;
+        typedef Allocator		allocator_type;
+        typedef	const T&		const_reference;
+        typedef	const T*		const_pointer;
+        typedef	T				value_type;
+        typedef	T&				reference;
+        typedef	T*				pointer;
+		typedef unsigned long	difference_type;
+		typedef difference_type	size_type;
     private:
         size_type			_reserve;
         size_type			_usedMem;
@@ -62,21 +63,26 @@ namespace ft{
                 _data = NULL;
         }
         void	reallocate(size_type size, const_reference val = T(), bool mod_2x = false){
-            size_type		newSize = size;
+            size_type		newSize;
             value_type *	tmpData;
+			size_type		i;
 
-            if (mod_2x)
-                newSize <<= 1;
-            tmpData = _alloc.allocate(max(newSize, _reserve));
-            if (!tmpData)
+			newSize = mod_2x ? size << 1 : size;
+            if (!(tmpData = _alloc.allocate(max(newSize, _reserve))))
                 throw runtime_error(NO_MEM_SPACE);
             if (_usedMem > size)
                 _usedMem = size;
-            for (ssize_t i = _usedMem - 1; i >= 0; i--)
-                tmpData[i] = _data[i];
-			if (&val)
-            	for (ssize_t i = max(size, _reserve) - 1; i >= _usedMem; i--)
-                	tmpData[i] = val;
+			if ((i = _usedMem))
+				do{
+					i--;
+					tmpData[i] = _data[i];
+				}while(i);
+			i = max(size, _reserve);
+			if (i > _usedMem)
+				do{
+					i--;
+					tmpData[i] = val;
+				}while(i > _usedMem);
             _alloc.deallocate(_data, _hint);
             _data = tmpData;
             _hint = newSize;
@@ -110,15 +116,15 @@ namespace ft{
 		void	checkData(){if (!_data) throw std::out_of_range(EX_DEF_NULL);}
     public:
 //* constructor's / destructor
-        vector(){setterConstructor();}
-        vector(ft::vector<T, Allocator> const & oth){
+        explicit vector(const allocator_type& alloc = allocator_type()): _alloc(alloc){setterConstructor();}
+		explicit vector(ft::vector<T, Allocator> const & oth, const allocator_type& alloc = allocator_type()): _alloc(alloc){
 			setterConstructor();
             copyFrom(oth);
         }
 		// * input_iterator constructor
 		template <typename InputIterator>
-		vector(InputIterator start, InputIterator finish,
-			   typename enable_if<is_input_iterator<typename InputIterator::iterator_category>::value, void *>::type * = NULL){
+		vector(InputIterator start, InputIterator finish, const allocator_type & alloc = allocator_type(),
+			   IS_ITERATOR(is_input_iterator, InputIterator) * = NULL): _alloc(alloc){
 			setterConstructor();
 			for(; start != finish; ++start)
 				push_back(*start);
@@ -126,7 +132,7 @@ namespace ft{
 		// * some_iterators constructor
 		template <typename _Iterator>
 		vector(_Iterator start, _Iterator finish,
-			   typename enable_if<!is_input_iterator<typename _Iterator::iterator_category>::value, void **>::type * = NULL){
+			   IS_ITERATOR(!is_input_iterator, _Iterator) * = NULL){
 			size_type hint = std::distance(start, finish);
 			setterConstructor(RESERVE_DEFAULT, 0, hint);
 			for(; start != finish; ++start)
@@ -141,36 +147,6 @@ namespace ft{
         vector(size_type n){
             setterConstructor(RESERVE_DEFAULT, 0, max(static_cast<ulong>(n << 1), static_cast<ulong>(RESERVE_DEFAULT)));
         }
-//		template <typename _integer1, typename _integer2>
-//        vector(typename enable_if<is_integer<_integer1>::value, _integer1>::type size,
-//				value_type val): _reserve(10){
-//            setterConstructor(10, static_cast<ulong>(size), max(static_cast<ulong>(size) << 1, _reserve));
-//            for (size_type i = 0; i < size; i++)
-//                _data[i] = val;
-//        }
-
-//		template <typename _integer1, typename _integer2>
-//        vector(typename enable_if<is_integer<_integer1>::value, _integer1>::type size,
-//			   typename enable_if<is_integer<_integer2>::value, _integer2>::type val,
-//			   typename enable_if<is_integer<value_type>::value, void **>::type * = NULL): _reserve(10){
-//            setterConstructor(10, static_cast<ulong>(size), max(static_cast<ulong>(size) << 1, _reserve));
-//            for (size_type i = 0; i < size; i++)
-//                _data[i] = val;
-//        }
-//		template <typename _integer>
-//        vector(_integer size,typename enable_if<!is_integer<value_type>::value, value_type>::type val): _reserve(10){
-//            setterConstructor(10, static_cast<ulong>(size), max(static_cast<ulong>(size) << 1, _reserve));
-//            for (size_type i = 0; i < size; i++)
-//                _data[i] = val;
-//        }
-//		template <typename _integer>
-//        vector(typename enable_if<is_integer<_integer>::value, _integer >::type size): _reserve(10){
-//			value_type val;
-//            setterConstructor(10, static_cast<ulong>(size), max(static_cast<ulong>(size) << 1, _reserve));
-//            for (size_type i = 0; i < size; i++)
-//                _data[i] = val;
-//        }
-
         ~vector(){_alloc.deallocate(_data, _hint);}
 //*	public methods
         inline size_type	capacity()	const {return _hint;}
@@ -223,7 +199,7 @@ namespace ft{
 		// assign with input_iterator
 		template <typename input_itertor>
 		void assign(input_itertor start, input_itertor finish,
-					typename enable_if<is_input_iterator<input_itertor>::value , input_itertor>::type * = NULL){
+					IS_ITERATOR(is_input_iterator, input_itertor) * = NULL){
 			std::cout << "input_iterator" << std::endl;
 			_usedMem = 0;
 			for(;start != finish; ++start){
@@ -233,7 +209,7 @@ namespace ft{
 		// assign with random_access_iterator
 		template <typename _iter>
 		void assign(_iter start, _iter finish,
-					typename enable_if<!is_input_iterator<typename _iter::iterator_category>::value, _iter >::type * = NULL){
+					IS_ITERATOR(!is_input_iterator, _iter) * = NULL){
 			size_type len = std::distance(start, finish);
 			if (len > _hint) {
 				delete_data();
@@ -265,6 +241,13 @@ namespace ft{
                 _usedMem = n;
             reallocate(n, val);
         }
+
+		void reserve(const size_type & newSize){
+			if (newSize > _hint)
+				reallocate(newSize);
+			_reserve = newSize;
+		}
+
         void	shrink_to_fit(){
             if (_usedMem == _hint)
                 return ;
@@ -311,27 +294,22 @@ namespace ft{
 				return _data[_iter];
 			}
 
-			bool operator<(const iterator &rhs) const { return _iter < rhs._iter; }
-
+			bool operator< (const iterator &rhs) const { return _iter <	 rhs._iter; }
 			bool operator==(const iterator &rhs) const { return _iter == rhs._iter; }
-
-			bool operator!=(const iterator &rhs) const { return !(*this == rhs); }
-
-			bool operator>(const iterator &rhs) const { return rhs < *this; }
-
-			bool operator<=(const iterator &rhs) const { return !(rhs < *this); }
-
-			bool operator>=(const iterator &rhs) const { return !(*this < rhs); }
+			bool operator!=(const iterator &rhs) const { return _iter != rhs._iter; }
+			bool operator> (const iterator &rhs) const { return _iter >	 rhs._iter; }
+			bool operator<=(const iterator &rhs) const { return _iter <= rhs._iter; }
+			bool operator>=(const iterator &rhs) const { return _iter >= rhs._iter; }
 
 			iterator operator--(int) {
 				iterator tmp(*this);
-				--(*this);
+				--_iter;
 				return tmp;
 			}
 
 			iterator operator++(int) {
 				iterator tmp(*this);
-				++(*this);
+				++_iter;
 				return tmp;
 			}
 
@@ -360,7 +338,6 @@ namespace ft{
 					typename enable_if<is_integer<integer>::value, integer >::type num) const {
 				return iterator(_data, _usedMem, _iter - num);
 			}
-
 
 			iterator &operator=(const iterator &oth) {
 				_usedMem = oth._usedMem;
@@ -407,24 +384,12 @@ namespace ft{
 					return _data[_usedMem - 1];
 				return _data[_iter];
 			}
-			bool operator<(const reverse_iterator &rhs) const {
-				return rhs._iter < _iter;
-			}
-			bool operator==(const reverse_iterator &rhs) const {
-				return rhs._iter == _iter;
-			}
-			bool operator!=(const reverse_iterator &rhs) const {
-				return rhs._iter != _iter;
-			}
-			bool operator>(const reverse_iterator &rhs) const {
-				return rhs._iter > _iter;
-			}
-			bool operator<=(const reverse_iterator &rhs) const {
-				return rhs._iter <= _iter;
-			}
-			bool operator>=(const reverse_iterator &rhs) const {
-				return rhs._iter >= _iter;
-			}
+			bool operator< (const reverse_iterator &rhs) const {return rhs._iter <  _iter;}
+			bool operator==(const reverse_iterator &rhs) const {return rhs._iter == _iter;}
+			bool operator!=(const reverse_iterator &rhs) const {return rhs._iter != _iter;}
+			bool operator> (const reverse_iterator &rhs) const {return rhs._iter >  _iter;}
+			bool operator<=(const reverse_iterator &rhs) const {return rhs._iter <= _iter;}
+			bool operator>=(const reverse_iterator &rhs) const {return rhs._iter >= _iter;}
 			reverse_iterator &operator++() {
 				_iter--;
 				return *this;
@@ -447,19 +412,15 @@ namespace ft{
 				return tmp;
 			}
 
-			size_type
-			operator+(const reverse_iterator & oth){return _iter + oth._iter;}
-			size_type
-			operator-(const reverse_iterator & oth){return _iter - oth._iter;}
+			size_type operator+(const reverse_iterator & oth){return oth._iter + _iter;}
+			size_type operator-(const reverse_iterator & oth){return oth._iter - _iter;}
 
-			template <typename integer>
-			reverse_iterator operator+(
-					typename enable_if<is_integer<integer>::value, integer >::type num) const {
+			template <typename integer> reverse_iterator
+			operator+(typename enable_if<is_integer<integer>::value, integer >::type num) const {
 				return reverse_iterator(_data, _usedMem, _iter + num);
 			}
-			template <typename integer>
-			reverse_iterator operator-(
-					typename enable_if<is_integer<integer>::value, integer >::type num) const {
+			template <typename integer> reverse_iterator
+			operator-(typename enable_if<is_integer<integer>::value, integer >::type num) const {
 				return reverse_iterator(_data, _usedMem, _iter - num);
 			}
 
