@@ -10,6 +10,10 @@
 #include <string>
 #include <algorithm>
 #include "sfinae.hpp"
+#include <cmath>
+#include <cstring>
+
+#include <vector>
 
 using std::runtime_error;
 using std::allocator;
@@ -22,6 +26,21 @@ using std::max;
 
 #define IS_ITERATOR(IS_TYPE, THIS_TYPE)\
 typename enable_if<IS_TYPE<typename THIS_TYPE::iterator_category>::value, THIS_TYPE >::type
+
+#define IS_NUM(THIS_TYPE)\
+typename enable_if<is_integer<THIS_TYPE>::value, THIS_TYPE>::type
+
+#define IS_CONST_NUM(THIS_TYPE)\
+typename enable_if<is_const_integer<THIS_TYPE>::value, THIS_TYPE>::type
+
+#define IS_NO_CONST_NUM(THIS_TYPE)\
+typename enable_if<is_no_const_integer<THIS_TYPE>::value, THIS_TYPE>::type
+
+#define IS_NOT_NUM(THIS_TYPE)\
+typename enable_if<!is_integer<THIS_TYPE>::value, THIS_TYPE>::type
+
+#define IS_SAME(TYPE1, TYPE2)\
+typename enable_if<is_same<TYPE1, TYPE2>::value, TYPE1>::type
 
 // * FT NAMESPACE
 namespace ft{
@@ -36,18 +55,17 @@ namespace ft{
 		typedef	T				value_type;
 		typedef	T&				reference;
 		typedef	T*				pointer;
-		typedef unsigned long	difference_type;
-		typedef difference_type	size_type;
+		typedef long long	difference_type;
 	private:
-		size_type			_reserve;
-		size_type			_usedMem;
-		size_type			_hint;
+		difference_type			_reserve;
+		difference_type			_usedMem;
+		difference_type			_hint;
 //		Allocator			   _alloc;
 		std::allocator<T>		_alloc;
 		pointer					_data;
 	private:
 		//* private methods
-		void	setterConstructor(size_type Reserve = RESERVE_DEFAULT, size_type UsedMem = 0, size_type Hint = 0)
+		void	setterConstructor(difference_type Reserve = RESERVE_DEFAULT, difference_type UsedMem = 0, difference_type Hint = 0)
 		{
 			_usedMem = UsedMem;
 			_reserve = Reserve;
@@ -62,10 +80,10 @@ namespace ft{
 			} else
 				_data = NULL;
 		}
-		void	reallocate(size_type size, const_reference val = T(), bool mod_2x = false){
-			size_type		newSize;
+		void	reallocate(difference_type size, const_reference val = T(), bool mod_2x = false){
+			difference_type		newSize;
 			value_type *	tmpData;
-			size_type		i;
+			difference_type		i;
 
 			newSize = mod_2x ? size << 1 : size;
 			if (!(tmpData = _alloc.allocate(max(newSize, _reserve))))
@@ -96,7 +114,7 @@ namespace ft{
 			}
 		}
 
-		void new_data(size_type n){
+		void new_data(difference_type n){
 			_hint = max(n , _reserve);
 			_data = _alloc.allocate(_hint);
 			if (!_data)
@@ -109,7 +127,7 @@ namespace ft{
 			_usedMem = oth._usedMem;
 			if (_usedMem > 0){
 				_data = _alloc.allocate(_hint);
-				for (size_type i = 0; i < _usedMem; i++)
+				for (difference_type i = 0; i < _usedMem; i++)
 					_data[i] = oth._data[i];
 			}
 		}
@@ -133,35 +151,35 @@ namespace ft{
 		template <typename _Iterator>
 		vector(_Iterator start, _Iterator finish,
 			   IS_ITERATOR(!is_input_iterator, _Iterator) * = NULL){
-			size_type hint = std::distance(start, finish);
+			difference_type hint = std::distance(start, finish);
 			setterConstructor(RESERVE_DEFAULT, 0, hint);
 			for(; start != finish; ++start)
 				push_back(*start);
 		}
 
-		vector(size_type n, const_reference val){
+		vector(difference_type n, const_reference val){
 			setterConstructor(RESERVE_DEFAULT, static_cast<ulong>(n), max(static_cast<ulong>(n << 1), static_cast<ulong>(RESERVE_DEFAULT)));
-			for (size_type i = 0; i < n; i++)
+			for (difference_type i = 0; i < n; i++)
 				_data[i] = val;
 		}
-		vector(size_type n){
+		vector(difference_type n){
 			setterConstructor(RESERVE_DEFAULT, 0, max(static_cast<ulong>(n << 1), static_cast<ulong>(RESERVE_DEFAULT)));
 		}
 		~vector(){_alloc.deallocate(_data, _hint);}
 //*	public methods
-		inline size_type	capacity()	const {return _hint;}
-		inline size_type	size()		const {return _usedMem;}
+		inline difference_type	capacity()	const {return _hint;}
+		inline difference_type	size()		const {return _usedMem;}
 		inline bool			empty()		const {return !_usedMem || !_data;}
-		size_type			max_size()	const {return _alloc.max_size();}
-		reference		operator [](size_type i)		{return _data[i];}
-		const_reference	operator [](size_type i) const	{return _data[i];}
+		difference_type			max_size()	const {return _alloc.max_size();}
+		reference		operator [](difference_type i)		{return _data[i];}
+		const_reference	operator [](difference_type i) const	{return _data[i];}
 		inline void		clean()		{_usedMem = 0;}
-		reference		at(size_type i){
+		reference		at(difference_type i){
 			if (i >= _usedMem || i < 0 || !_data)
 				throw std::out_of_range("vector");
 			return this->operator[](i);
 		}
-		const_reference	at(size_type i) const{
+		const_reference	at(difference_type i) const{
 			if (i >= _usedMem || i < 0 || !_data)
 				throw std::out_of_range("vector");
 			return this->operator[](i);
@@ -178,23 +196,11 @@ namespace ft{
 			_data[_usedMem++] = value;
 		}
 		void			swap(ft::vector<T> & oth){
-			size_type tmpReservedMinMem = oth._reserve;
-			Allocator tmpAlloc = oth._alloc;
-			size_type tmpHitPoint = oth._hint;
-			size_type tmpUsedMem = oth._usedMem;
-			pointer tmpData = oth._data;
-
-			oth._reserve = _reserve;
-			oth._hint = _hint;
-			oth._usedMem = _usedMem;
-			oth._alloc = _alloc;
-			oth._data = _data;
-
-			_reserve = tmpReservedMinMem;
-			_hint = tmpHitPoint;
-			_usedMem = tmpUsedMem;
-			_alloc = tmpAlloc;
-			_data = tmpData;
+			std::swap(_reserve, oth._reserve);
+			std::swap(_usedMem, oth._usedMem);
+			std::swap(_alloc, oth._alloc);
+			std::swap(_hint, oth._hint);
+			std::swap(_data, oth._data);
 		}
 		// assign with input_iterator
 		template <typename input_itertor>
@@ -210,7 +216,7 @@ namespace ft{
 		template <typename _iter>
 		void assign(_iter start, _iter finish,
 					IS_ITERATOR(!is_input_iterator, _iter) * = NULL){
-			size_type len = std::distance(start, finish);
+			difference_type len = std::distance(start, finish);
 			if (len > _hint) {
 				delete_data();
 				new_data(len);
@@ -220,17 +226,17 @@ namespace ft{
 				_data[_usedMem++] = *start++;
 		}
 		// assign with integer & T parameter
-		void assign(size_type n, const_reference value){
+		void assign(difference_type n, const_reference value){
 			if (n > _hint){
 				delete_data();
 				new_data(n);
 			}
-			for (size_type i = 0; i < n; i++)
+			for (difference_type i = 0; i < n; i++)
 				_data[i] = value;
 			_usedMem = n;
 		}
 
-		void	resize(size_type n, const_reference val){
+		void	resize(difference_type n, const_reference val = T()){
 			if (n < 0 && n > _alloc.max_size())
 				throw runtime_error("э, пошол отсюда!!! что за ресайз??");
 			else if (n == 0){
@@ -242,7 +248,7 @@ namespace ft{
 			reallocate(n, val);
 		}
 
-		void reserve(const size_type & newSize){
+		void reserve(const difference_type & newSize){
 			if (newSize > _hint)
 				reallocate(newSize);
 			_reserve = newSize;
@@ -253,11 +259,14 @@ namespace ft{
 				return ;
 			reallocate(_usedMem);
 		}
+
+		void	pop_back(){
+			delete _data[--_usedMem];
+		}
 		// * iterators
 	public:
 		class const_iterator {
 		public:
-			typedef size_type difference_type;
 			typedef T value_type;
 			typedef T *pointer;
 			typedef T &reference;
@@ -266,191 +275,145 @@ namespace ft{
 			typedef std::random_access_iterator_tag iterator_category;
 		protected:
 			friend class vector;
-
-			pointer _data;
-			long _usedMem;
-			long _iter;
-
-			const_iterator(pointer data, size_type usedMem, size_type currentIter)
-					: _data(data), _usedMem(usedMem), _iter(currentIter) {}
+			pointer		_data;
+			long		_usedMem;
+			long		_iter;
+			long		_direction;
+			const_iterator(pointer data, difference_type usedMem, difference_type currentIter, difference_type direction = 0)
+					: _data(data), _usedMem(usedMem), _iter(currentIter), _direction(direction) {}
 		public:
-			const_iterator(size_type num)
+			const_iterator(const_iterator const & oth)
+				:_data(oth._data), _usedMem(oth._usedMem), _iter(oth._iter), _direction(oth._direction){}
+			const_iterator(difference_type num)
 					: _data(NULL), _usedMem(0), _iter(num) {}
 			const_iterator()
 					: _data(NULL), _usedMem(0), _iter(0) {}
-
-			const_iterator(const_iterator const &Iter)
-					: _data(Iter._data), _usedMem(Iter._usedMem), _iter(Iter._iter) {}
-
-		private:
+		protected:
 			void compare(const_iterator const &oth) {
 				if (oth._data != _data)
 					throw runtime_error(NO_COMPARE_data);
 			}
+			reference check_range(difference_type num){
+				if (num >= _usedMem || num < 0)
+					return _data[_usedMem - 1];
+				return _data[std::abs(_direction - num)];
+			}
 
 		public:
-			const_pointer	operator->(){return &const_iterator::_data[const_iterator::_iter];}
-			const_reference operator*() const{
-				if (_iter >= _usedMem || _iter < 0)
-					return _data[_usedMem - 1];
-				return _data[_iter];
-			}
-			const_reference	operator[](size_type num){
-				if (num < 0 || num >= _usedMem)
-					return _data[_usedMem - 1];
-				return _data[num];
-			}
-
-			bool operator< (const const_iterator &rhs) const { return _iter <	 rhs._iter; }
+			const_pointer	operator->() {return &check_range(_iter);}
+			const_reference operator*() const {return check_range(_iter);}
+			const_reference	operator[](difference_type num){return check_range(num);}
+			bool operator< (const const_iterator &rhs) const { return _iter <  rhs._iter; }
 			bool operator==(const const_iterator &rhs) const { return _iter == rhs._iter; }
 			bool operator!=(const const_iterator &rhs) const { return _iter != rhs._iter; }
-			bool operator> (const const_iterator &rhs) const { return _iter >	 rhs._iter; }
+			bool operator> (const const_iterator &rhs) const { return _iter >  rhs._iter; }
 			bool operator<=(const const_iterator &rhs) const { return _iter <= rhs._iter; }
 			bool operator>=(const const_iterator &rhs) const { return _iter >= rhs._iter; }
 
-			const_iterator operator--(int) {
-				const_iterator tmp(*this);
-				--_iter;
-				return tmp;
-			}
-
-			const_iterator operator++(int) {
-				const_iterator tmp(*this);
-				++_iter;
-				return tmp;
-			}
-
-			const_iterator &operator++() {
-				_iter++;
-				return *this;
-			}
-
-			const_iterator &operator--() {
-				_iter--;
-				return *this;
-			}
-
+			const_iterator operator--(int) {const_iterator tmp(*this); --_iter;	return tmp;}
+			const_iterator operator++(int) {const_iterator tmp(*this); ++_iter;	return tmp;}
+			const_iterator &operator++() {_iter++; return *this;}
+			const_iterator &operator--() {_iter--; return *this;}
 			friend const_iterator operator-(const const_iterator & it1, const const_iterator & it2);
 			friend const_iterator operator+(const const_iterator & it1, const const_iterator & it2);
-
-			const_iterator &operator+=(size_type const num){_iter += num; return *this;}
-			const_iterator &operator-=(size_type const num){_iter -= num; return *this;}
+			const_iterator &operator+=(difference_type const num){_iter += num; return *this;}
+			const_iterator &operator-=(difference_type const num){_iter -= num; return *this;}
 			const_iterator &operator=(const const_iterator &oth) {
 				const_iterator::_usedMem = oth._usedMem;
 				const_iterator::_iter = oth._iter;
 				const_iterator::_data = oth._data;
 				return *this;
 			}
+			const_iterator operator+(const const_iterator & oth) const {
+				const_iterator tmp(oth);
+				tmp._iter += oth._iter;
+				return tmp;
+			}
+			const_iterator operator-(const const_iterator & oth) const {
+				const_iterator tmp(oth);
+				tmp._iter -= oth._iter;
+				return tmp;
+			}
 
-			const_iterator &operator+(const const_iterator & oth){return _iter + oth._iter;}
-			const_iterator &operator-(const const_iterator & oth){return _iter - oth._iter;}
+			const_iterator operator+(difference_type num) const {
+				const_iterator tmp(*this);
+				tmp._iter += num;
+				return tmp;
+			}
+
+			const_iterator operator-(difference_type num) const {
+				const_iterator tmp(*this);
+				tmp._iter -= num;
+				return tmp;
+			}
 		};
 
-		class iterator:public const_iterator{
+		class iterator: public const_iterator{
+			typedef	const_iterator super;
+			friend class vector<T, Allocator>;
+			iterator(pointer data, difference_type usedMem, difference_type iter): const_iterator(data, usedMem, iter){}
+		protected:
 			friend class ft::vector<T>;
-			iterator(pointer data, size_type usedMem, size_type iter): const_iterator(data, usedMem, iter){}
 		public:
 			iterator(){}
 			iterator(const_iterator const & oth): const_iterator(oth){}
-			reference operator*() {
-				if (const_iterator::_iter >= const_iterator::_usedMem || const_iterator::_iter < 0)
-					return const_iterator::_data[_usedMem - 1];
-				return const_iterator::_data[const_iterator::_iter];
-			}
-			pointer	operator->(){return &const_iterator::_data[const_iterator::_iter];}
-			reference &operator[](size_type const num){
-				if (num < 0) 
-					throw std::out_of_range("iterator[]");
-				return _data[const_iterator::_iter];		
-			}
+			reference	operator*()		{return this->check_range(super::_iter);}
+			pointer		operator->()	{return &this->check_range(super::_iter);}
+			reference	&operator[](difference_type const num){return super::check_range(num);}
 		};
-
-
-		class reverse_iterator {
+		class const_reverse_iterator: public const_iterator{
+			typedef	const_iterator super;
+			friend class vector<T, Allocator>;
+			const_reverse_iterator(pointer data, difference_type usedMem, difference_type iter)
+			: super(data, usedMem, iter, usedMem - 1){}
 		public:
-			typedef size_type difference_type;
-			typedef T value_type;
-			typedef T *pointer;
-			typedef T &reference;
-			typedef const T *const_pointer;
-			typedef const T &const_reference;
-			typedef std::random_access_iterator_tag iterator_category;
-		protected:
-			friend class vector;
-
-			pointer _data;
-			long _usedMem;
-			long _iter;
-
-			reverse_iterator(pointer data, size_type usedMem, size_type currentIter)
-					: _data(data), _usedMem(usedMem), _iter(currentIter) {}
+			const_reverse_iterator(){}
+			const_reverse_iterator(const_iterator const & oth):super(oth){}
+		};
+		class reverse_iterator: public const_iterator{
+			typedef	const_iterator super;
+			friend class vector<T, Allocator>;
+			reverse_iterator(pointer data, difference_type usedMem, difference_type iter)
+				: super(data, usedMem, iter, usedMem - 1){}
 		public:
-			reverse_iterator()
-					: _data(NULL), _usedMem(0), _iter(0) {}
-
-			reverse_iterator(reverse_iterator const &Iter)
-					: _data(Iter._data), _usedMem(Iter._usedMem), _iter(Iter._iter) {}
-
-		private:
-			void compare(reverse_iterator const &oth) {
-				if (oth._data != _data)
-					throw runtime_error(NO_COMPARE_data);
-			}
-
-		public:
-			reference operator*() {
-				if (_iter >= _usedMem || _iter < 0)
-					return _data[_usedMem - 1];
-				return _data[_iter];
-			}
-			bool operator< (const reverse_iterator &rhs) const {return rhs._iter <  _iter;}
-			bool operator==(const reverse_iterator &rhs) const {return rhs._iter == _iter;}
-			bool operator!=(const reverse_iterator &rhs) const {return rhs._iter != _iter;}
-			bool operator> (const reverse_iterator &rhs) const {return rhs._iter >  _iter;}
-			bool operator<=(const reverse_iterator &rhs) const {return rhs._iter <= _iter;}
-			bool operator>=(const reverse_iterator &rhs) const {return rhs._iter >= _iter;}
-			reverse_iterator operator++() {_iter--; return *this;}
-			reverse_iterator operator--() {_iter++; return *this;}
-			reverse_iterator operator--(int) {reverse_iterator tmp(*this);++_iter; return tmp;}
-			reverse_iterator operator++(int) {reverse_iterator tmp(*this);--_iter; return tmp;}
-			size_type operator+(const reverse_iterator & oth){return oth._iter + _iter;}
-			size_type operator-(const reverse_iterator & oth){return oth._iter - _iter;}
-			template <typename integer> reverse_iterator
-			operator+(typename enable_if<is_integer<integer>::value, integer >::type num) const {
-				return reverse_iterator(_data, _usedMem, _iter + num);}
-			template <typename integer> reverse_iterator
-			operator-(typename enable_if<is_integer<integer>::value, integer >::type num) const {
-				return reverse_iterator(_data, _usedMem, _iter - num);}
-			reverse_iterator &operator=(const reverse_iterator &oth) {
-				_usedMem = oth._usedMem;
-				_iter = oth._iter;
-				_data = oth._data;
-				return *this;
-			}
+			reverse_iterator(){}
+			reverse_iterator(const_iterator const & oth)
+				:super(oth), super::_direction(_usedMem - 1){}
+			reference	operator*()		{return this->check_range(super::_iter);}
+			pointer		operator->()	{return &this->check_range(super::_iter);}
+			reference	&operator[](difference_type const num){return super::check_range(num);}
 		};
 // * begin and end
 		reverse_iterator	rbegin(){return reverse_iterator(_data, _usedMem, _usedMem -1);}
 		iterator			begin(){return iterator(_data, _usedMem, 0);}
 		reverse_iterator	rend(){return reverse_iterator(_data, _usedMem, -1);}
 		iterator			end(){return iterator(_data, _usedMem, _usedMem);}
+
+		const_reverse_iterator	crbegin() const {return const_reverse_iterator(_data, _usedMem, _usedMem -1);}
+		const_iterator			cbegin() const {return const_iterator(_data, _usedMem, 0);}
+		const_reverse_iterator	crend() const {return const_reverse_iterator(_data, _usedMem, -1);}
+		const_iterator			cend() const {return const_iterator(_data, _usedMem, _usedMem);}
+
 		const_reference		front() const	{this->checkData(); return _data[0];}
 		const_reference		back()	const	{this->checkData(); return _data[_usedMem -1];}
 		reference			front() 		{this->checkData(); return _data[0];}
 		reference			back()			{this->checkData(); return _data[_usedMem -1];}
 	private:
-		bool	_insert(size_type pos, const_reference value){
-			if (_data && _usedMem < _hint){
-				for (size_type i = _hint -1; i <= pos ; --i) {
-					_data[i + 1] = _data[i];
-				}
-				_data[pos] = value;
-				_usedMem++;
+		bool	_insert(difference_type pos, const_reference value, difference_type count = 1){
+			difference_type i;
+			if (_data && _usedMem + count <= _hint){
+				for (i = _hint -1; i <= pos ; --i)
+					_data[i + count] = _data[i];
+				for (i = 0; i < count; i++)
+					_data[pos + i] = value;
+				_usedMem += count;
 				return true;
 			}
 			return false;
 		}
 	public:
-		iterator	insert(iterator & pos, const_reference value){
+		template<typename iterator>
+		iterator	insert(const_iterator pos, const_reference value){
 			if (!_data || !_usedMem)
 				push_back(value);
 			else if (!_insert(pos._iter, value)) {
@@ -458,20 +421,178 @@ namespace ft{
 					push_back(value);
 				}else{
 					reallocate(_usedMem, NULL, true);
-					for(size_type i = _hint - 1; i > pos._iter; --i) {
+					for(difference_type i = _hint - 1; i > pos._iter; --i) {
 						_data[i + 1] = _data[i];
 					}
 					_data[pos->iter] = value;
 					_usedMem++;
 				}
 			}
+			return pos;
 		}
+		iterator	insert(const_iterator pos, difference_type count, value_type value){
+			difference_type i;
+			difference_type iter;
+
+			iter = pos._iter;
+			if (!_data || !_usedMem){
+				for (i = 0; i < count; ++i, ++pos._usedMem)
+					push_back(value);
+				return pos;
+			}
+			else if (!_insert(iter, value, count)) {
+				if (iter >= _hint){
+					for (i = 0; i < count; i++)
+						push_back(value);
+				} else {
+					reallocate((_usedMem + count) << 1);
+					for(i = _hint - 1; i >= iter; --i)
+						_data[i + count] = _data[i];
+					for(i = 0; i < count; ++i)
+						_data[iter + i] = value;
+					_usedMem += count;
+				}
+			}
+			pos._usedMem = _usedMem;
+			return pos;
+		}
+		template <class InputIterator>
+    	iterator insert (iterator position, InputIterator first, InputIterator last, IS_NOT_NUM(InputIterator)* = 0){
+			difference_type count = std::distance(first, last);
+			difference_type i;
+			
+			if (_usedMem + count > _hint)
+				reallocate((_usedMem + count) << 1);
+			std::memmove(&_data[position._iter + count], &_data[position._iter], sizeof(T) * ((_usedMem - position._iter) + 1));
+			for(i = position._iter; first != last; ++i, ++first)
+				_data[i] = *first;
+			_usedMem += count;
+			position._usedMem = _usedMem;
+			return position;
+		}
+
+		bool operator > (vector<T, Allocator> const & v1) const {
+			const_iterator thisBegin, thisEnd;
+			const_iterator othBegin, othEnd;
+
+			thisBegin	= cbegin();
+			thisEnd		= cend();
+			othBegin	= v1.cbegin();
+			othEnd		= v1.cend();
+
+			while(thisBegin != thisEnd && othBegin != othEnd && *thisBegin == *othBegin){
+				++thisBegin;
+				++othBegin;
+			}
+			if (thisBegin == thisEnd && othBegin == othEnd)
+				return false;
+			else if (thisBegin == thisEnd)
+				return false;
+			else if (othBegin == othEnd)
+				return true;
+			return *thisBegin > *othBegin;
+		}
+		bool operator < (vector<T, Allocator> const & v1) const {
+			const_iterator thisBegin, thisEnd;
+			const_iterator othBegin, othEnd;
+
+			thisBegin	= cbegin();
+			thisEnd		= cend();
+			othBegin	= v1.cbegin();
+			othEnd		= v1.cend();
+
+			while(thisBegin != thisEnd && othBegin != othEnd && *thisBegin == *othBegin){
+				++thisBegin;
+				++othBegin;
+			}
+			if (thisBegin == thisEnd && othBegin == othEnd)
+				return false;
+			else if (thisBegin == thisEnd)
+				return false;
+			else if (othBegin == othEnd)
+				return true;
+			return *thisBegin < *othBegin;
+		}
+		bool operator >= (vector<T, Allocator> const & v1) const {
+			const_iterator thisBegin, thisEnd;
+			const_iterator othBegin, othEnd;
+
+			thisBegin	= cbegin();
+			thisEnd		= cend();
+			othBegin	= v1.cbegin();
+			othEnd		= v1.cend();
+
+			while(thisBegin != thisEnd && othBegin != othEnd && *thisBegin < *othBegin){
+				++thisBegin;
+				++othBegin;
+			}
+			if (thisBegin == thisEnd && othBegin == othEnd)
+				return true;
+			else if (thisBegin == thisEnd)
+				return false;
+			else if (othBegin == othEnd)
+				return true;
+			return *thisBegin >= *othBegin;
+		}
+		bool operator <= (vector<T, Allocator> const & v1) const {
+			const_iterator thisBegin, thisEnd;
+			const_iterator othBegin, othEnd;
+
+			thisBegin	= cbegin();
+			thisEnd		= cend();
+			othBegin	= v1.cbegin();
+			othEnd		= v1.cend();
+
+			while(thisBegin != thisEnd && othBegin != othEnd && *thisBegin > *othBegin){
+				++thisBegin;
+				++othBegin;
+			}
+			if (thisBegin == thisEnd && othBegin == othEnd)
+				return true;
+			else if (thisBegin == thisEnd)
+				return false;
+			else if (othBegin == othEnd)
+				return true;
+			return *thisBegin <= *othBegin;
+		}
+		bool operator == (vector<T, Allocator> const & v1) const {
+			const_iterator thisBegin, thisEnd;
+			const_iterator othBegin, othEnd;
+
+			thisBegin	= cbegin();
+			thisEnd		= cend();
+			othBegin	= v1.cbegin();
+			othEnd		= v1.cend();
+
+			while(thisBegin != thisEnd && othBegin != othEnd && *thisBegin == *othBegin){
+				++thisBegin;
+				++othBegin;
+			}
+			if (thisBegin == thisEnd && othBegin == othEnd)
+				return true;
+			else if (thisBegin == thisEnd)
+				return false;
+			else if (othBegin == othEnd)
+				return true;
+			return false;
+		}
+		bool operator != (vector<T, Allocator> const & v1) const {return !operator==(v1);}
 	};
-	template <typename V>
-	struct reverse_iterator: public V{
-		template<typename VI>
-		reverse_iterator(VI const &oth_iter): V::V(oth_iter){}
-	};
+	//template <typename V>
+	//class reverse_iterator: public V{
+	//	public:
+	//	template<typename VI>
+	//	reverse_iterator(VI const &oth_iter): V::V(oth_iter){}
+	//	V&	base(){return this->V;}
+	//};
+
+	//class _reverse_iterator: public std::vector<int>::iterator{
+	//	typedef typename _reverse_iterator::std::vector<int>::iterator base;
+	//	public:
+	//	std::vector<int>::iterator::
+	//	template<typename VI>
+	//	reverse_iterator(VI const &oth_iter): base::(oth_iter){}
+	//};
 	//template <typename V>
 	//class const_reverse_iterator: public V{};
 };
