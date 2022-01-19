@@ -49,10 +49,12 @@ rprinter(){
 
 int main( )
 {
-	std::vector<char> cc;
+	std::vector<int> ar = {9,8,7,6,5,4,3,2,1};
+	//std::vector<char> cc;
 //	cc.
-	printer<std::vector<char> >();
-	printer<ft::vector<char> >();
-	rprinter<std::vector<char> >();
-	rprinter<ft::vector<char> >();
+	//printer<std::vector<char> >();
+	//printer<ft::vector<char> >();
+	//rprinter<std::vector<char> >();
+	//rprinter<ft::vector<char> >();
+	//ft::reverse_iterator my_rit(ar.begin(), ar.end());
 }

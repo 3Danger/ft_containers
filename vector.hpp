@@ -273,7 +273,6 @@ namespace ft{
 
 			const_iterator(pointer data, size_type usedMem, size_type currentIter)
 					: _data(data), _usedMem(usedMem), _iter(currentIter) {}
-
 		public:
 			const_iterator(size_type num)
 					: _data(NULL), _usedMem(0), _iter(num) {}
@@ -385,7 +384,6 @@ namespace ft{
 
 			reverse_iterator(pointer data, size_type usedMem, size_type currentIter)
 					: _data(data), _usedMem(usedMem), _iter(currentIter) {}
-
 		public:
 			reverse_iterator()
 					: _data(NULL), _usedMem(0), _iter(0) {}
@@ -411,40 +409,18 @@ namespace ft{
 			bool operator> (const reverse_iterator &rhs) const {return rhs._iter >  _iter;}
 			bool operator<=(const reverse_iterator &rhs) const {return rhs._iter <= _iter;}
 			bool operator>=(const reverse_iterator &rhs) const {return rhs._iter >= _iter;}
-			reverse_iterator &operator++() {
-				_iter--;
-				return *this;
-			}
-
-			reverse_iterator &operator--() {
-				_iter++;
-				return *this;
-			}
-
-			reverse_iterator operator--(int) {
-				reverse_iterator tmp(*this);
-				++_iter;
-				return tmp;
-			}
-
-			reverse_iterator operator++(int) {
-				reverse_iterator tmp(*this);
-				--_iter;
-				return tmp;
-			}
-
+			reverse_iterator operator++() {_iter--; return *this;}
+			reverse_iterator operator--() {_iter++; return *this;}
+			reverse_iterator operator--(int) {reverse_iterator tmp(*this);++_iter; return tmp;}
+			reverse_iterator operator++(int) {reverse_iterator tmp(*this);--_iter; return tmp;}
 			size_type operator+(const reverse_iterator & oth){return oth._iter + _iter;}
 			size_type operator-(const reverse_iterator & oth){return oth._iter - _iter;}
-
 			template <typename integer> reverse_iterator
 			operator+(typename enable_if<is_integer<integer>::value, integer >::type num) const {
-				return reverse_iterator(_data, _usedMem, _iter + num);
-			}
+				return reverse_iterator(_data, _usedMem, _iter + num);}
 			template <typename integer> reverse_iterator
 			operator-(typename enable_if<is_integer<integer>::value, integer >::type num) const {
-				return reverse_iterator(_data, _usedMem, _iter - num);
-			}
-
+				return reverse_iterator(_data, _usedMem, _iter - num);}
 			reverse_iterator &operator=(const reverse_iterator &oth) {
 				_usedMem = oth._usedMem;
 				_iter = oth._iter;
@@ -452,19 +428,15 @@ namespace ft{
 				return *this;
 			}
 		};
-
-
 // * begin and end
 		reverse_iterator	rbegin(){return reverse_iterator(_data, _usedMem, _usedMem -1);}
 		iterator			begin(){return iterator(_data, _usedMem, 0);}
 		reverse_iterator	rend(){return reverse_iterator(_data, _usedMem, -1);}
 		iterator			end(){return iterator(_data, _usedMem, _usedMem);}
-
 		const_reference		front() const	{this->checkData(); return _data[0];}
 		const_reference		back()	const	{this->checkData(); return _data[_usedMem -1];}
 		reference			front() 		{this->checkData(); return _data[0];}
 		reference			back()			{this->checkData(); return _data[_usedMem -1];}
-
 	private:
 		bool	_insert(size_type pos, const_reference value){
 			if (_data && _usedMem < _hint){
@@ -495,23 +467,12 @@ namespace ft{
 			}
 		}
 	};
+	template <typename V>
+	struct reverse_iterator: public V{
+		template<typename VI>
+		reverse_iterator(VI const &oth_iter): V::V(oth_iter){}
+	};
+	//template <typename V>
+	//class const_reverse_iterator: public V{};
 };
-
-template <typename T>
-typename ft::vector<T>::const_iterator operator+(
-	const typename  ft::vector<T>::const_iterator & it1, 
-	const typename  ft::vector<T>::const_iterator & it2) {
-	it1._data = it2._data;
-	it1._usedMem = it2._usedMem;
-	return it1 + it2;
-}
-template <typename T>
-typename ft::vector<T>::const_iterator operator-(
-	const typename  ft::vector<T>::const_iterator & it1, 
-	const typename  ft::vector<T>::const_iterator & it2) {
-	it1._data = it2._data;
-	it1._usedMem = it2._usedMem;
-	return it1 - it2;
-}
-
 #endif //CONTAINERYYY_VECTOR_H
