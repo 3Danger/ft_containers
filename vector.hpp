@@ -12,12 +12,14 @@
 #include "sfinae.hpp"
 #include <cmath>
 #include <cstring>
+#include <typeinfo>
 
 #include <vector>
 
 using std::runtime_error;
 using std::allocator;
 using std::max;
+using std::min;
 #define NO_MEM_SPACE "exception: vector: allocator can't allocate memory"
 #define NO_COMPARE_data "exception: vector::iterator: data is not comparable!"
 #define EX_DEF_NULL "exeption: trying deference NULL"
@@ -49,13 +51,14 @@ namespace ft{
 //		friend class		iterator;
 //		friend class		reverse_iterator;
 	public:
-		typedef Allocator		allocator_type;
-		typedef	const T&		const_reference;
-		typedef	const T*		const_pointer;
-		typedef	T				value_type;
-		typedef	T&				reference;
-		typedef	T*				pointer;
-		typedef long long	difference_type;
+		typedef Allocator			allocator_type;
+		typedef	T					value_type;
+		typedef	value_type		 	&reference;
+		typedef	value_type		 	*pointer;
+		typedef	value_type const 	&const_reference;
+		typedef	value_type const 	*const_pointer;
+		typedef ptrdiff_t			difference_type;
+		typedef size_t				size_type;
 	private:
 		difference_type			_reserve;
 		difference_type			_usedMem;
@@ -65,6 +68,13 @@ namespace ft{
 		pointer					_data;
 	private:
 		//* private methods
+		template<typename iter> size_type
+		dist(iter i1, iter i2, IS_ITERATOR(!is_input_iterator, iter) * = NULL){
+			size_type i = 0;
+			for(; i1 != i2; ++i1, ++i)
+				;
+			return i;
+		}
 		void	setterConstructor(difference_type Reserve = RESERVE_DEFAULT, difference_type UsedMem = 0, difference_type Hint = 0)
 		{
 			_usedMem = UsedMem;
@@ -77,33 +87,30 @@ namespace ft{
 				_data = _alloc.allocate(_hint);
 				if (!_data)
 					throw runtime_error(NO_MEM_SPACE);
-			} else
+			} else {
 				_data = NULL;
+			}
 		}
 		void	reallocate(difference_type size, const_reference val = T(), bool mod_2x = false){
-			difference_type		newSize;
-			value_type *	tmpData;
-			difference_type		i;
+			Allocator 			newAlloc;
+			difference_type		newHint, newMetaUsed, newUsedMem, i;
+			pointer				newData;
 
-			newSize = mod_2x ? size << 1 : size;
-			if (!(tmpData = _alloc.allocate(max(newSize, _reserve))))
+			newHint = max(mod_2x ? size << 1 : size, _reserve);
+			newMetaUsed = max(size, _reserve);
+			newUsedMem = min(_usedMem, size); // 10 5
+
+			if (!(newData = newAlloc.allocate(newHint)))
 				throw runtime_error(NO_MEM_SPACE);
-			if (_usedMem > size)
-				_usedMem = size;
-			if ((i = _usedMem))
-				do{
-					i--;
-					tmpData[i] = _data[i];
-				}while(i);
-			i = max(size, _reserve);
-			if (i > _usedMem)
-				do{
-					i--;
-					tmpData[i] = val;
-				}while(i > _usedMem);
+			for(i = 0; i < newUsedMem; ++i)	//  _data[0...4]
+				newAlloc.construct(&newData[i], _data[i]);
+			for (; i < newHint; i++) // newData[5...newHint]
+				newAlloc.construct(&_data[i], val);			
 			_alloc.deallocate(_data, _hint);
-			_data = tmpData;
-			_hint = newSize;
+			_alloc = newAlloc;
+			_usedMem = newUsedMem;
+			_hint = newHint;
+			_data = newData;
 		}
 
 		void delete_data(){
@@ -134,15 +141,21 @@ namespace ft{
 		void	checkData(){if (!_data) throw std::out_of_range(EX_DEF_NULL);}
 	public:
 //* constructor's / destructor
-		explicit vector(const allocator_type& alloc = allocator_type()): _alloc(alloc){setterConstructor();}
-		explicit vector(ft::vector<T, Allocator> const & oth, const allocator_type& alloc = allocator_type()): _alloc(alloc){
+		explicit vector(const allocator_type& alloc = allocator_type())
+			: _alloc(alloc)
+		{
 			setterConstructor();
+		}
+		vector(ft::vector<T, Allocator> const & oth, const allocator_type& alloc = allocator_type())
+			: _reserve(RESERVE_DEFAULT), _usedMem(0), _hint(0), _data(NULL)
+		{
 			copyFrom(oth);
 		}
 		// * input_iterator constructor
 		template <typename InputIterator>
 		vector(InputIterator start, InputIterator finish, const allocator_type & alloc = allocator_type(),
-			   IS_ITERATOR(is_input_iterator, InputIterator) * = NULL): _alloc(alloc){
+			   IS_ITERATOR(is_input_iterator, InputIterator) * = NULL)
+			   : _alloc(alloc){
 			setterConstructor();
 			for(; start != finish; ++start)
 				push_back(*start);
@@ -151,7 +164,7 @@ namespace ft{
 		template <typename _Iterator>
 		vector(_Iterator start, _Iterator finish,
 			   IS_ITERATOR(!is_input_iterator, _Iterator) * = NULL){
-			difference_type hint = std::distance(start, finish);
+			size_type hint = dist(start, finish);
 			setterConstructor(RESERVE_DEFAULT, 0, hint);
 			for(; start != finish; ++start)
 				push_back(*start);
@@ -168,7 +181,7 @@ namespace ft{
 		~vector(){_alloc.deallocate(_data, _hint);}
 //*	public methods
 		inline difference_type	capacity()	const {return _hint;}
-		inline difference_type	size()		const {return _usedMem;}
+		inline size_type	size()		const {return _usedMem;}
 		inline bool			empty()		const {return !_usedMem || !_data;}
 		difference_type			max_size()	const {return _alloc.max_size();}
 		reference		operator [](difference_type i)		{return _data[i];}
@@ -184,16 +197,20 @@ namespace ft{
 				throw std::out_of_range("vector");
 			return this->operator[](i);
 		}
-		void			push_back(const value_type & value){
+		void			push_back(const value_type &value){
 			if (!_data){
 				_hint = _reserve;
-				_data = _alloc.allocate(_hint);
-				if (!_data)
+				if (!(_data = _alloc.allocate(_hint)))
 					throw runtime_error(NO_MEM_SPACE);
+				for (difference_type i = 0; i < _hint; i++)
+					_alloc.construct(&_data[i], value);
 			} else if (_usedMem == _hint){
-				reallocate(_hint, T(), true);
+				reallocate(_hint, NULL, true);
 			}
-			_data[_usedMem++] = value;
+			//std::cout << std::endl;
+			//std::cout << typeid(value).name() << std::endl;
+			//_data[_usedMem++] = value;
+			_alloc.construct(&_data[_usedMem++], value);
 		}
 		void			swap(ft::vector<T> & oth){
 			std::swap(_reserve, oth._reserve);
@@ -216,7 +233,7 @@ namespace ft{
 		template <typename _iter>
 		void assign(_iter start, _iter finish,
 					IS_ITERATOR(!is_input_iterator, _iter) * = NULL){
-			difference_type len = std::distance(start, finish);
+			difference_type len = dist(start, finish);
 			if (len > _hint) {
 				delete_data();
 				new_data(len);
@@ -236,16 +253,28 @@ namespace ft{
 			_usedMem = n;
 		}
 
-		void	resize(difference_type n, const_reference val = T()){
-			if (n < 0 && n > _alloc.max_size())
+		void	resize(difference_type n, reference val){
+			if (n > _alloc.max_size())
 				throw runtime_error("э, пошол отсюда!!! что за ресайз??");
-			else if (n == 0){
+			if (n == _hint)
+				return ;
+			if (n == 0){
 				clean();
 				return ;
 			}
-			else if (_usedMem > n)
-				_usedMem = n;
-			reallocate(n, val);
+			reallocate(n, &val);
+		}
+
+		void	resize(difference_type n){
+			if (n > _alloc.max_size())
+				throw runtime_error("э, пошол отсюда!!! что за ресайз??");
+			if (n == _hint)
+				return ;
+			if (n == 0){
+				clean();
+				return ;
+			}
+			reallocate(n);
 		}
 
 		void reserve(const difference_type & newSize){
@@ -261,7 +290,8 @@ namespace ft{
 		}
 
 		void	pop_back(){
-			delete _data[--_usedMem];
+			//delete _data[--_usedMem];
+			--_usedMem;
 		}
 		// * iterators
 	public:
@@ -280,7 +310,10 @@ namespace ft{
 			long		_iter;
 			long		_direction;
 			const_iterator(pointer data, difference_type usedMem, difference_type currentIter, difference_type direction = 0)
-					: _data(data), _usedMem(usedMem), _iter(currentIter), _direction(direction) {}
+					: _data(data), 
+					_usedMem(usedMem), 
+					_iter(currentIter), 
+					_direction(direction) {}
 		public:
 			const_iterator(const_iterator const & oth)
 				:_data(oth._data), _usedMem(oth._usedMem), _iter(oth._iter), _direction(oth._direction){}
@@ -294,6 +327,15 @@ namespace ft{
 					throw runtime_error(NO_COMPARE_data);
 			}
 			reference check_range(difference_type num){
+				if (not _data)
+					throw runtime_error("vector: data is empty");
+				if (num >= _usedMem || num < 0)
+					return _data[_usedMem - 1];
+				return _data[std::abs(_direction - num)];
+			}
+			const_reference check_range(difference_type num) const {
+				if (not _data)
+					throw runtime_error("vector: data is empty");
 				if (num >= _usedMem || num < 0)
 					return _data[_usedMem - 1];
 				return _data[std::abs(_direction - num)];
@@ -319,6 +361,7 @@ namespace ft{
 			const_iterator &operator+=(difference_type const num){_iter += num; return *this;}
 			const_iterator &operator-=(difference_type const num){_iter -= num; return *this;}
 			const_iterator &operator=(const const_iterator &oth) {
+				const_iterator::_direction = oth._direction;
 				const_iterator::_usedMem = oth._usedMem;
 				const_iterator::_iter = oth._iter;
 				const_iterator::_data = oth._data;
@@ -412,7 +455,7 @@ namespace ft{
 			return false;
 		}
 	public:
-		template<typename iterator>
+		//template<typename iterator>
 		iterator	insert(const_iterator pos, const_reference value){
 			if (!_data || !_usedMem)
 				push_back(value);
@@ -420,11 +463,11 @@ namespace ft{
 				if (pos._iter >= _hint){
 					push_back(value);
 				}else{
-					reallocate(_usedMem, NULL, true);
+					reallocate(_usedMem << 1);
 					for(difference_type i = _hint - 1; i > pos._iter; --i) {
 						_data[i + 1] = _data[i];
 					}
-					_data[pos->iter] = value;
+					_data[pos._iter] = value;
 					_usedMem++;
 				}
 			}
@@ -458,7 +501,7 @@ namespace ft{
 		}
 		template <class InputIterator>
     	iterator insert (iterator position, InputIterator first, InputIterator last, IS_NOT_NUM(InputIterator)* = 0){
-			difference_type count = std::distance(first, last);
+			difference_type count = dist(first, last);
 			difference_type i;
 			
 			if (_usedMem + count > _hint)

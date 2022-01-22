@@ -6,35 +6,40 @@
 int main(){
 	std::string str = "123456789";
 	std::string str2 = "ABCDEF";
-	ft::vector<char> fvstr(str.begin(), str.end());
-	std::vector<char> svstr(str.begin(), str.end());
+	ft::vector<std::string> fvstr;
+	std::vector<std::string> svstr;
+	for (size_t i = 0; i < 10; i++)
+		fvstr.push_back("hello_" + std::to_string(i));
+	for (size_t i = 0; i < 10; i++)
+		svstr.push_back("hello_" + std::to_string(i));
 
-	std::cout << &*svstr.begin() << std::endl;
-	std::cout << &*fvstr.begin() << std::endl;
 
-	//fvstr.insert(fvstr.rbegin(), 5, '0');
-	//svstr.insert(svstr.rbegin(), 5, '0');
+std::cout << *fvstr.begin() << std::endl;
+	fvstr.resize(5);
+std::cout << *fvstr.begin() << std::endl;
+	fvstr.resize(3);
+	fvstr.resize(8);
+	fvstr.resize(2);
 
-	std::cout << &*svstr.begin() << std::endl;
-	std::cout << &*fvstr.begin() << std::endl;
-	fvstr.insert(fvstr.begin(), str2.begin(), str2.end());
-	svstr.insert(svstr.begin(), str2.begin(), str2.end());
-	std::cout << &*svstr.begin() << std::endl;
-	std::cout << &*fvstr.begin() << std::endl;
+	svstr.resize(5);
+	svstr.resize(3);
+	svstr.resize(8);
+	svstr.resize(2);
 }
 
 
 
+//#include <iostream>
+//#include <string>
+//   #include "vector.hpp"
+//#include <vector>
 
 
 
 
-//#if    0                        /*    std::vector    */
-//    #include <iostream>
-//    #include <vector>
-//    namespace ft = std;
-//#else                        /*    ft::vector    */
-//    #include "vector.hpp"
+//#ifdef STD
+//    //namespace ft = std
+//	#define ft std
 //#endif
 
 //typedef struct    s_data
@@ -337,25 +342,25 @@ int main(){
 
 //    std::cout << "<+======================================================================+>\n" << std::endl;
 
-//    std::cout << "\t\t.erase( iterator pos )" << std::endl;
-//    intVec.erase(++intVec.begin());
-//    strVec.erase(++strVec.begin());
-//    structVec.erase(++structVec.begin());
-//    std::cout << "\n\t\tintVec.erase( ++intVec.begin() )\n";
+//    //std::cout << "\t\t.erase( iterator pos )" << std::endl;
+//    //intVec.erase(++intVec.begin());
+//    //strVec.erase(++strVec.begin());
+//    //structVec.erase(++structVec.begin());
+//    //std::cout << "\n\t\tintVec.erase( ++intVec.begin() )\n";
 //    print_vector(intVec, "intVec");
-//    std::cout << "\n\t\tstrVec.erase( ++strVec.begin() )\n";
+//    //std::cout << "\n\t\tstrVec.erase( ++strVec.begin() )\n";
 //    print_vector(strVec, "strVec");
-//    std::cout << "\n\t\tstructVec.erase( ++structVec.begin() )\n";
+//    //std::cout << "\n\t\tstructVec.erase( ++structVec.begin() )\n";
 //    print_struct_vector(structVec, "structVec");
-//    std::cout << "\t\t.erase( iterator first, iterator last )" << std::endl;
-//    intVec.erase(++intVec.begin(), --intVec.end());
-//    strVec.erase(++strVec.begin(), --strVec.end());
-//    structVec.erase(++structVec.begin(), --structVec.end());
-//    std::cout << "\n\t\tintVec.erase( ++intVec.begin(), --intVec.end() )\n";
+//    //std::cout << "\t\t.erase( iterator first, iterator last )" << std::endl;
+//    //intVec.erase(++intVec.begin(), --intVec.end());
+//    //strVec.erase(++strVec.begin(), --strVec.end());
+//    //structVec.erase(++structVec.begin(), --structVec.end());
+//    //std::cout << "\n\t\tintVec.erase( ++intVec.begin(), --intVec.end() )\n";
 //    print_vector(intVec, "intVec");
-//    std::cout << "\n\t\tstrVec.erase( ++strVec.begin(), --strVec.end() )\n";
+//    //std::cout << "\n\t\tstrVec.erase( ++strVec.begin(), --strVec.end() )\n";
 //    print_vector(strVec, "strVec");
-//    std::cout << "\n\t\tstructVec.erase( ++structVec.begin(), --structVec.end() )\n";
+//    //std::cout << "\n\t\tstructVec.erase( ++structVec.begin(), --structVec.end() )\n";
 //    print_struct_vector(structVec, "structVec");
 
 //    std::cout << "<+======================================================================+>\n" << std::endl;
