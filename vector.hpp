@@ -58,8 +58,12 @@ namespace ft{
 		typedef size_t				size_type;
 	private:
 		size_type				_reserve;
-		size_type				_usedMem;
-		size_type				_hint;
+								//acceptable memory
+		size_type				_aMem;
+								//used memory
+		size_type				_uMem;
+								//capacity memory
+		size_type				_cMem;
 //		Allocator			   _alloc;
 		std::allocator<T>		_alloc;
 		pointer					_data;
@@ -74,14 +78,15 @@ namespace ft{
 		}
 		void	setterConstructor(difference_type Reserve = RESERVE_DEFAULT, difference_type UsedMem = 0, difference_type Hint = 0)
 		{
-			_usedMem = UsedMem;
+			_uMem = UsedMem;
+			_aMem = UsedMem;
 			_reserve = Reserve;
-			_hint = Hint;
+			_cMem = Hint;
 
-			if (_hint < 0)
+			if (_cMem < 0)
 				throw std::out_of_range("vector");
 			if (Hint > 0){
-				_data = _alloc.allocate(_hint);
+				_data = _alloc.allocate(_cMem);
 				if (!_data)
 					throw runtime_error(NO_MEM_SPACE);
 			} else {
@@ -89,49 +94,52 @@ namespace ft{
 			}
 		}
 		void	reallocate(size_type size, const_reference val = T()){
-			Allocator 			newAlloc;
-			size_type		newHint, newMetaUsed, newUsedMem, i;
-			pointer				newData;
+			Allocator 		newAlloc;
+			pointer			newData;
+			size_type		newUsedMem;
+			size_type		newCMem;
+			size_type		i;
 
-			newHint = max(size, _reserve);
-			newMetaUsed = max(size, _reserve);
-			newUsedMem = min(_usedMem, size); // 10 5
+			newCMem = max(size, _reserve);
+			newUsedMem = min(_uMem, size); // 10 5
 
-			if (!(newData = newAlloc.allocate(newHint)))
+			if (!(newData = newAlloc.allocate(newCMem)))
 				throw runtime_error(NO_MEM_SPACE);
 			for(i = 0; i < newUsedMem; ++i)	//  _data[0...4]
 				newAlloc.construct(&newData[i], _data[i]);
-			for (; i < newHint; i++) // newData[5...newHint]
+			for (; i < newCMem; i++) // newData[5...newHint]
 				newAlloc.construct(&newData[i], val);			
-			_alloc.deallocate(_data, _hint);
+			_alloc.deallocate(_data, _cMem);
 			_alloc = newAlloc;
-			_usedMem = newUsedMem;
-			_hint = newHint;
+			_uMem = newUsedMem;
+			_aMem = size;
+			_cMem = newCMem;
 			_data = newData;
 		}
 
 		void delete_data(){
 			if (_data) {
-				_alloc.deallocate(_data, _hint);
+				_alloc.deallocate(_data, _cMem);
 				//_data = NULL;
 				//_hint = 0;
 			}
 		}
 
 		void new_data(size_type n){
-			_hint = max(n , _reserve);
-			_data = _alloc.allocate(_hint);
+			_cMem = max(n , _reserve);
+			_data = _alloc.allocate(_cMem);
 			if (!_data)
 				throw runtime_error(NO_MEM_SPACE);
 		}
 
 		void copyFrom(ft::vector<T> const & oth){
 			delete_data();
-			_hint =	oth._hint;
-			_usedMem = oth._usedMem;
-			if (_usedMem > 0){
-				_data = _alloc.allocate(_hint);
-				for (size_type i = 0; i < _usedMem; i++)
+			_cMem =	oth._cMem;
+			_uMem = oth._uMem;
+			_aMem = oth._aMem;
+			if (_aMem > 0){
+				_data = _alloc.allocate(_cMem);
+				for (size_type i = 0; i < _aMem; i++)
 					_data[i] = oth._data[i];
 			}
 		}
@@ -144,7 +152,7 @@ namespace ft{
 			setterConstructor();
 		}
 		vector(ft::vector<T, Allocator> const & oth, const allocator_type& alloc = allocator_type())
-			: _reserve(RESERVE_DEFAULT), _usedMem(0), _hint(0), _alloc(alloc), _data(NULL)
+			: _reserve(RESERVE_DEFAULT), _uMem(0), _cMem(0), _alloc(alloc), _data(NULL)
 		{
 			copyFrom(oth);
 		}
@@ -161,8 +169,8 @@ namespace ft{
 		template <typename _Iterator>
 		vector(_Iterator start, _Iterator finish,
 			   IS_ITERATOR(!is_input_iterator, _Iterator) * = NULL){
-			size_type hint = dist(start, finish);
-			setterConstructor(RESERVE_DEFAULT, 0, hint);
+			size_type newCMem = dist(start, finish);
+			setterConstructor(RESERVE_DEFAULT, 0, newCMem);
 			for(; start != finish; ++start)
 				push_back(*start);
 		}
@@ -175,45 +183,48 @@ namespace ft{
 		vector(difference_type n){
 			setterConstructor(RESERVE_DEFAULT, 0, max(static_cast<ulong>(n << 1), static_cast<ulong>(RESERVE_DEFAULT)));
 		}
-		~vector(){_alloc.deallocate(_data, _hint);}
+		~vector(){_alloc.deallocate(_data, _cMem);}
 //*	public methods
-		inline difference_type	capacity()	const {return _hint;}
-		inline size_type	size()		const {return _usedMem;}
-		inline bool			empty()		const {return !_usedMem || !_data;}
+		inline difference_type	capacity()	const {return _cMem;}
+		inline size_type		size()		const {return _aMem;}
+		inline bool				empty()		const {return !_uMem || !_data;}
 		difference_type			max_size()	const {return _alloc.max_size();}
-		reference		operator [](difference_type i)		{return _data[i];}
+		reference		operator [](difference_type i)			{return _data[i];}
 		const_reference	operator [](difference_type i) const	{return _data[i];}
-		inline void		clean()		{_usedMem = 0;}
+		inline void		clean()		{_uMem = 0;}
 		reference		at(size_type i){
-			if (i >= _usedMem || i < 0 || !_data)
+			if (i >= _uMem || i < 0 || !_data)
 				throw std::out_of_range("vector");
 			return this->operator[](i);
 		}
-		const_reference	at(size_type i) const{
-			if (i >= _usedMem || i < 0 || !_data)
+		const_reference	at(size_type i) const {
+			if (i >= _uMem || i < 0 || !_data)
 				throw std::out_of_range("vector");
 			return this->operator[](i);
 		}
 		void			push_back(const value_type &value){
 			if (!_data){
-				_hint = _reserve;
-				if (!(_data = _alloc.allocate(_hint)))
+				_cMem = _reserve;
+				_aMem = _reserve;
+				if (!(_data = _alloc.allocate(_cMem)))
 					throw runtime_error(NO_MEM_SPACE);
-				for (size_type i = 0; i < _hint; i++)
+				for (size_type i = 0; i < _cMem; i++)
 					_alloc.construct(&_data[i], value);
-			} else if (_usedMem == _hint){
-				reallocate(_hint << 1);
+			} else if (_uMem == _cMem){
+				reallocate(_cMem << 1);
 			}
 			//std::cout << std::endl;
 			//std::cout << typeid(value).name() << std::endl;
 			//_data[_usedMem++] = value;
-			_alloc.construct(&_data[_usedMem++], value);
+			_alloc.construct(&_data[_uMem++], value);
+			_aMem = max(_aMem, _uMem);
 		}
 		void			swap(ft::vector<T> & oth){
 			std::swap(_reserve, oth._reserve);
-			std::swap(_usedMem, oth._usedMem);
 			std::swap(_alloc, oth._alloc);
-			std::swap(_hint, oth._hint);
+			std::swap(_uMem, oth._uMem);
+			std::swap(_aMem, oth._aMem);
+			std::swap(_cMem, oth._cMem);
 			std::swap(_data, oth._data);
 		}
 		// assign with input_iterator
@@ -221,7 +232,7 @@ namespace ft{
 		void assign(input_itertor start, input_itertor finish,
 					IS_ITERATOR(is_input_iterator, input_itertor) * = NULL){
 			std::cout << "input_iterator" << std::endl;
-			_usedMem = 0;
+			_uMem = 0;
 			for(;start != finish; ++start){
 				push_back(*start);
 			}
@@ -231,68 +242,62 @@ namespace ft{
 		void assign(_iter start, _iter finish,
 					IS_ITERATOR(!is_input_iterator, _iter) * = NULL){
 			size_type len = dist(start, finish);
-			if (len > _hint) {
+			if (len > _cMem) {
 				delete_data();
 				new_data(len);
 			}
-			_usedMem = 0;
-			while(_usedMem < len)
-				_data[_usedMem++] = *start++;
+			_uMem = 0;
+			while(_uMem < len)
+				_alloc.construct(&_data[_uMem++], *start++);
+			_aMem = _uMem;
 		}
 		// assign with integer & T parameter
 		void assign(size_type n, const_reference value)
 		{
-			if (n > _hint){
+			if (n > _cMem){
 				delete_data();
 				new_data(n);
 			}
+			_uMem = 0;
 			for (size_type i = 0; i < n; i++)
-				_data[i] = value;
-			_usedMem = n;
+				_alloc.construct(&_data[_uMem++], value);
+			_aMem = _uMem = n;
 		}
 
 		void	resize(size_t n, value_type val)
 		{
 			if (n > _alloc.max_size())
 				throw runtime_error("vector: resize is much too");
-			else if (n < _hint){
-				for (size_t i = _usedMem - 1; i < n; i++)
-					push_back(val);
-				_usedMem = n;
-				return ;
-			}
-			else if (n == _hint)
-				return ;
-			else if (n == 0){
+			//else if (n < _cMem)
+			//	for (size_t i = _uMem - 1; i < n; i++)
+			//		push_back(val);
+			else if (n == 0)
 				clean();
-				return ;
+			else if (n != _cMem){
+				reallocate(n, val);
 			}
-			reallocate(n, val);
-			if (_usedMem < n)
-				_usedMem = n;
 		}
+
 		void	resize(size_t n){
-			value_type val;
-			if (is_integer<value_type>::value || is_float<value_type>::value)
-				val = 0;
-			resize(n, val);
+			value_type t{};
+			resize(n, t);
 		}
 
 		void reserve(const size_type newSize){
-			if (newSize > _hint)
+			if (newSize > _cMem)
 				reallocate(newSize);
 			_reserve = newSize;
 		}
 
 		void	shrink_to_fit(){
-			if (_usedMem == _hint)
+			if (_uMem == _cMem)
 				return ;
-			reallocate(_usedMem);
+			reallocate(_uMem);
 		}
 
 		void	pop_back(){
 			//delete _data[--_usedMem];
-			--_usedMem;
+			--_uMem;
 		}
 		// * iterators
 	public:
@@ -308,7 +313,7 @@ namespace ft{
 			friend class vector;
 			pointer			_data;
 			size_type		_usedMem;
-			difference_type		_iter;
+			difference_type	_iter;
 			int				_direction;
 			const_iterator(pointer data, difference_type usedMem, difference_type currentIter, difference_type direction = 0)
 					: _data(data), 
@@ -422,97 +427,57 @@ namespace ft{
 		public:
 			reverse_iterator(){}
 			reverse_iterator(const_iterator const & oth)
-				:super(oth), super::_direction(_usedMem - 1){}
+				:super(oth), super::_direction(_uMem - 1){}
 			reference	operator*()		{return this->check_range(super::_iter);}
 			pointer		operator->()	{return &this->check_range(super::_iter);}
 			reference	&operator[](difference_type const num){return super::check_range(num);}
 		};
 // * begin and end
-		reverse_iterator	rbegin(){return reverse_iterator(_data, _usedMem, _usedMem -1);}
-		iterator			begin(){return iterator(_data, _usedMem, 0);}
-		reverse_iterator	rend(){return reverse_iterator(_data, _usedMem, -1);}
-		iterator			end(){return iterator(_data, _usedMem, _usedMem);}
+		reverse_iterator	rbegin(){return reverse_iterator(_data, _uMem, _uMem -1);}
+		iterator			begin(){return iterator(_data, _uMem, 0);}
+		reverse_iterator	rend(){return reverse_iterator(_data, _uMem, -1);}
+		iterator			end(){return iterator(_data, _uMem, _uMem);}
 
-		const_reverse_iterator	crbegin() const {return const_reverse_iterator(_data, _usedMem, _usedMem -1);}
-		const_iterator			cbegin() const {return const_iterator(_data, _usedMem, 0);}
-		const_reverse_iterator	crend() const {return const_reverse_iterator(_data, _usedMem, -1);}
-		const_iterator			cend() const {return const_iterator(_data, _usedMem, _usedMem);}
+		const_reverse_iterator	crbegin() const {return const_reverse_iterator(_data, _uMem, _uMem -1);}
+		const_iterator			cbegin() const {return const_iterator(_data, _uMem, 0);}
+		const_reverse_iterator	crend() const {return const_reverse_iterator(_data, _uMem, -1);}
+		const_iterator			cend() const {return const_iterator(_data, _uMem, _uMem);}
 
 		const_reference		front() const	{this->checkData(); return _data[0];}
-		const_reference		back()	const	{this->checkData(); return _data[_usedMem -1];}
+		const_reference		back()	const	{this->checkData(); return _data[_uMem -1];}
 		reference			front() 		{this->checkData(); return _data[0];}
-		reference			back()			{this->checkData(); return _data[_usedMem -1];}
+		reference			back()			{this->checkData(); return _data[_uMem -1];}
 	private:
-		bool	_insert(difference_type pos, const_reference value, difference_type count = 1){
+		void	_insert(difference_type pos, const_reference value, difference_type count = 1){
 			difference_type i;
-			if (_data && _usedMem + count <= _hint){
-				for (i = _hint -1; i <= pos ; --i)
-					_data[i + count] = _data[i];
-				for (i = 0; i < count; i++)
-					_data[pos + i] = value;
-				_usedMem += count;
-				return true;
+
+			if (_uMem + count > _cMem)
+				reallocate((_uMem + count) << 1);
+			else
+			{
+				_uMem += count;
+				_aMem += count;
 			}
-			return false;
+			for (i = _cMem -1; i >= pos ; --i)
+				_alloc.construct(&_data[i + count], _data[i]);
+			for (i = 0; i < count; i++)
+				_alloc.construct(&_data[pos + i], value);
 		}
 	public:
 		//template<typename iterator>
 		iterator	insert(const_iterator pos, const_reference value){
-			if (!_data || !_usedMem)
-				push_back(value);
-			else if (!_insert(pos._iter, value)) {
-				if (pos._iter >= static_cast<difference_type>(_hint)){
-					push_back(value);
-				}else{
-					reallocate(_usedMem << 1);
-					for(difference_type i = _hint - 1; i > pos._iter; --i) {
-						_data[i + 1] = _data[i];
-					}
-					_data[pos._iter] = value;
-					_usedMem++;
-				}
-			}
+			_insert(pos._iter, value);
 			return pos;
 		}
 		iterator	insert(const_iterator pos, size_type count, value_type value){
-			size_type i;
-			size_type iter;
-
-			iter = pos._iter;
-			if (!_data || !_usedMem){
-				for (i = 0; i < count; ++i, ++pos._usedMem)
-					push_back(value);
-				return pos;
-			}
-			else if (!_insert(iter, value, count)) {
-				if (iter >= _hint){
-					for (i = 0; i < count; i++)
-						push_back(value);
-				} else {
-					reallocate((_usedMem + count) << 1);
-					for(i = _hint - 1; i >= iter; --i)
-						_data[i + count] = _data[i];
-					for(i = 0; i < count; ++i)
-						_data[iter + i] = value;
-					_usedMem += count;
-				}
-			}
-			pos._usedMem = _usedMem;
+			_insert(pos._iter, value, count);
 			return pos;
 		}
 		template <class InputIterator>
-    	iterator insert (iterator position, InputIterator first, InputIterator last, IS_NOT_NUM(InputIterator)* = 0){
-			difference_type count = dist(first, last);
-			difference_type i;
-			
-			if (_usedMem + count > _hint)
-				reallocate((_usedMem + count) << 1);
-			std::memmove(&_data[position._iter + count], &_data[position._iter], sizeof(T) * ((_usedMem - position._iter) + 1));
-			for(i = position._iter; first != last; ++i, ++first)
-				_data[i] = *first;
-			_usedMem += count;
-			position._usedMem = _usedMem;
-			return position;
+    	iterator insert (const_iterator position, InputIterator first, InputIterator last, IS_NOT_NUM(InputIterator)* = 0){
+			while (first != last)
+				_insert(position._iter, *first++);
+			return iterator(_data, _uMem, position._iter);
 		}
 
 		bool operator > (vector<T, Allocator> const & v1) const {
