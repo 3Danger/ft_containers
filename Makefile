@@ -7,9 +7,3 @@ CFLAGS=-Wall -Werror -Wextra -I. -g
 
 $(NAME): $(wildcard *.cpp *.hpp)
 	$(CC) $(CFLAGS) $(wildcard *.cpp) -o $@
-
-run:
-	rm $(NAME)
-	make
-	./$(NAME)
-	
