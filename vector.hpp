@@ -29,14 +29,11 @@ using std::min;
 #define IS_ITERATOR(IS_TYPE, THIS_TYPE)\
 typename enable_if<IS_TYPE<typename THIS_TYPE::iterator_category>::value, THIS_TYPE >::type
 
+#define IS_ALLNUM(THIS_TYPE)\
+typename enable_if<is_integer<THIS_TYPE>::value || is_float<THIS_TYPE>::value, THIS_TYPE>::type
+
 #define IS_NUM(THIS_TYPE)\
 typename enable_if<is_integer<THIS_TYPE>::value, THIS_TYPE>::type
-
-#define IS_CONST_NUM(THIS_TYPE)\
-typename enable_if<is_const_integer<THIS_TYPE>::value, THIS_TYPE>::type
-
-#define IS_NO_CONST_NUM(THIS_TYPE)\
-typename enable_if<is_no_const_integer<THIS_TYPE>::value, THIS_TYPE>::type
 
 #define IS_NOT_NUM(THIS_TYPE)\
 typename enable_if<!is_integer<THIS_TYPE>::value, THIS_TYPE>::type
@@ -256,35 +253,29 @@ namespace ft{
 
 		void	resize(size_t n, value_type val)
 		{
-			/**
-			 *
-			 * if (n < _hint)
-			 * 	/code/
-			 * ..else if ... 
-			*/
-
 			if (n > _alloc.max_size())
-				throw runtime_error("э, пошол отсюда!!! что за ресайз??");
-			if (n == _hint)
+				throw runtime_error("vector: resize is much too");
+			else if (n < _hint){
+				for (size_t i = _usedMem - 1; i < n; i++)
+					push_back(val);
+				_usedMem = n;
 				return ;
-			if (n == 0){
+			}
+			else if (n == _hint)
+				return ;
+			else if (n == 0){
 				clean();
 				return ;
 			}
 			reallocate(n, val);
+			if (_usedMem < n)
+				_usedMem = n;
 		}
-
-		void	resize(const size_type n)
-		{
-			if (n > _alloc.max_size())
-				throw runtime_error("э, пошол отсюда!!! что за ресайз??");
-			if (n == _hint)
-				return ;
-			if (n == 0){
-				clean();
-				return ;
-			}
-			reallocate(n);
+		void	resize(size_t n){
+			value_type val;
+			if (is_integer<value_type>::value || is_float<value_type>::value)
+				val = 0;
+			resize(n, val);
 		}
 
 		void reserve(const size_type newSize){
@@ -563,7 +554,7 @@ namespace ft{
 			else if (thisBegin == thisEnd)
 				return false;
 			else if (othBegin == othEnd)
-				return true;
+				return false;
 			return *thisBegin < *othBegin;
 		}
 		bool operator >= (vector<T, Allocator> const & v1) const {
