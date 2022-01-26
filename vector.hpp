@@ -62,8 +62,8 @@ namespace ft{
 		size_type				_uMem;
 								//capacity memory
 		size_type				_cMem;
-//		Allocator			   _alloc;
-		std::allocator<T>		_alloc;
+		Allocator				_alloc;
+		//std::allocator<T>		_alloc;
 		pointer					_data;
 	private:
 		//* private methods
@@ -114,10 +114,9 @@ namespace ft{
 		void delete_data(){
 			if (_data) {
 				_alloc.deallocate(_data, _cMem);
+				_data = NULL;
 				_uMem = 0;
-				//_cMem = 0;
-				//_data = NULL;
-				//_hint = 0;
+				_cMem = 0;
 			}
 		}
 
@@ -142,9 +141,9 @@ namespace ft{
 	public:
 //* constructor's / destructor
 		explicit vector(const allocator_type& alloc = allocator_type())
-			: _alloc(alloc)
+			: _reserve(RESERVE_DEFAULT), _uMem(0),_cMem(0), _alloc(alloc), _data(NULL)
 		{
-			setterConstructor();
+			//setterConstructor();
 		}
 		vector(ft::vector<T, Allocator> const & oth, const allocator_type& alloc = allocator_type())
 			: _reserve(RESERVE_DEFAULT), _uMem(0), _cMem(0), _alloc(alloc), _data(NULL)
@@ -255,9 +254,6 @@ namespace ft{
 		{
 			if (n > _alloc.max_size())
 				throw runtime_error("vector: resize is much too");
-			//else if (n < _cMem)
-			//	for (size_t i = _uMem - 1; i < n; i++)
-			//		push_back(val);
 			else if (n == 0)
 				clean();
 			else if (n != _cMem){
