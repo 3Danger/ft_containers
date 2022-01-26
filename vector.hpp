@@ -58,8 +58,6 @@ namespace ft{
 		typedef size_t				size_type;
 	private:
 		size_type				_reserve;
-								//acceptable memory
-		size_type				_aMem;
 								//used memory
 		size_type				_uMem;
 								//capacity memory
@@ -79,9 +77,8 @@ namespace ft{
 		void	setterConstructor(difference_type Reserve = RESERVE_DEFAULT, difference_type UsedMem = 0, difference_type Hint = 0)
 		{
 			_uMem = UsedMem;
-			_aMem = UsedMem;
 			_reserve = Reserve;
-			_cMem = Hint;
+			_cMem = max(Hint, Reserve);
 
 			if (_cMem < 0)
 				throw std::out_of_range("vector");
@@ -93,7 +90,7 @@ namespace ft{
 				_data = NULL;
 			}
 		}
-		void	reallocate(size_type size, const_reference val = T()){
+		void	reallocate(size_type size){
 			Allocator 		newAlloc;
 			pointer			newData;
 			size_type		newUsedMem;
@@ -106,13 +103,10 @@ namespace ft{
 			if (!(newData = newAlloc.allocate(newCMem)))
 				throw runtime_error(NO_MEM_SPACE);
 			for(i = 0; i < newUsedMem; ++i)	//  _data[0...4]
-				newAlloc.construct(&newData[i], _data[i]);
-			for (; i < newCMem; i++) // newData[5...newHint]
-				newAlloc.construct(&newData[i], val);			
+				newAlloc.construct(&newData[i], _data[i]);		
 			_alloc.deallocate(_data, _cMem);
 			_alloc = newAlloc;
 			_uMem = newUsedMem;
-			_aMem = size;
 			_cMem = newCMem;
 			_data = newData;
 		}
@@ -120,6 +114,8 @@ namespace ft{
 		void delete_data(){
 			if (_data) {
 				_alloc.deallocate(_data, _cMem);
+				_uMem = 0;
+				//_cMem = 0;
 				//_data = NULL;
 				//_hint = 0;
 			}
@@ -136,11 +132,10 @@ namespace ft{
 			delete_data();
 			_cMem =	oth._cMem;
 			_uMem = oth._uMem;
-			_aMem = oth._aMem;
-			if (_aMem > 0){
+			if (_uMem > 0){
 				_data = _alloc.allocate(_cMem);
-				for (size_type i = 0; i < _aMem; i++)
-					_data[i] = oth._data[i];
+				for (size_type i = 0; i < _uMem; i++)
+					_alloc.construct(&_data[i], oth._data[i]);
 			}
 		}
 		void	checkData(){if (!_data) throw std::out_of_range(EX_DEF_NULL);}
@@ -170,7 +165,7 @@ namespace ft{
 		vector(_Iterator start, _Iterator finish,
 			   IS_ITERATOR(!is_input_iterator, _Iterator) * = NULL){
 			size_type newCMem = dist(start, finish);
-			setterConstructor(RESERVE_DEFAULT, 0, newCMem);
+			setterConstructor(RESERVE_DEFAULT, 0, newCMem << 1);
 			for(; start != finish; ++start)
 				push_back(*start);
 		}
@@ -183,10 +178,10 @@ namespace ft{
 		vector(difference_type n){
 			setterConstructor(RESERVE_DEFAULT, 0, max(static_cast<ulong>(n << 1), static_cast<ulong>(RESERVE_DEFAULT)));
 		}
-		~vector(){_alloc.deallocate(_data, _cMem);}
+		~vector(){if(_data) _alloc.deallocate(_data, _cMem);}
 //*	public methods
 		inline difference_type	capacity()	const {return _cMem;}
-		inline size_type		size()		const {return _aMem;}
+		inline size_type		size()		const {return _uMem;}
 		inline bool				empty()		const {return !_uMem || !_data;}
 		difference_type			max_size()	const {return _alloc.max_size();}
 		reference		operator [](difference_type i)			{return _data[i];}
@@ -194,36 +189,33 @@ namespace ft{
 		inline void		clean()		{_uMem = 0;}
 		reference		at(size_type i){
 			if (i >= _uMem || i < 0 || !_data)
-				throw std::out_of_range("vector");
+				throw std::out_of_range(std::string(
+					"vector::_M_range_check: __n (which is ") + 
+					std::to_string(i) + ") >= this->size() (which is " + 
+					std::to_string(_uMem) + ")");
 			return this->operator[](i);
 		}
 		const_reference	at(size_type i) const {
 			if (i >= _uMem || i < 0 || !_data)
-				throw std::out_of_range("vector");
+				throw std::out_of_range(std::string(
+					"vector::_M_range_check: __n (which is ") + 
+					std::to_string(i) + ") >= this->size() (which is " + 
+					std::to_string(_uMem) + ")");
 			return this->operator[](i);
 		}
 		void			push_back(const value_type &value){
 			if (!_data){
 				_cMem = _reserve;
-				_aMem = _reserve;
 				if (!(_data = _alloc.allocate(_cMem)))
 					throw runtime_error(NO_MEM_SPACE);
-				for (size_type i = 0; i < _cMem; i++)
-					_alloc.construct(&_data[i], value);
-			} else if (_uMem == _cMem){
+			} else if (_uMem == _cMem)
 				reallocate(_cMem << 1);
-			}
-			//std::cout << std::endl;
-			//std::cout << typeid(value).name() << std::endl;
-			//_data[_usedMem++] = value;
 			_alloc.construct(&_data[_uMem++], value);
-			_aMem = max(_aMem, _uMem);
 		}
 		void			swap(ft::vector<T> & oth){
 			std::swap(_reserve, oth._reserve);
 			std::swap(_alloc, oth._alloc);
 			std::swap(_uMem, oth._uMem);
-			std::swap(_aMem, oth._aMem);
 			std::swap(_cMem, oth._cMem);
 			std::swap(_data, oth._data);
 		}
@@ -249,19 +241,14 @@ namespace ft{
 			_uMem = 0;
 			while(_uMem < len)
 				_alloc.construct(&_data[_uMem++], *start++);
-			_aMem = _uMem;
 		}
 		// assign with integer & T parameter
 		void assign(size_type n, const_reference value)
 		{
-			if (n > _cMem){
-				delete_data();
-				new_data(n);
-			}
-			_uMem = 0;
+			delete_data();
+			new_data(n);
 			for (size_type i = 0; i < n; i++)
 				_alloc.construct(&_data[_uMem++], value);
-			_aMem = _uMem = n;
 		}
 
 		void	resize(size_t n, value_type val)
@@ -274,7 +261,10 @@ namespace ft{
 			else if (n == 0)
 				clean();
 			else if (n != _cMem){
-				reallocate(n, val);
+				reallocate(n);
+				while (_uMem < n)
+					_alloc.construct(_data + _uMem++, val);
+				
 			}
 		}
 
@@ -448,20 +438,42 @@ namespace ft{
 		reference			front() 		{this->checkData(); return _data[0];}
 		reference			back()			{this->checkData(); return _data[_uMem -1];}
 	private:
-		void	_insert(difference_type pos, const_reference value, difference_type count = 1){
-			difference_type i;
-
-			if (_uMem + count > _cMem)
-				reallocate((_uMem + count) << 1);
-			else
+		void	_insert(size_type pos, const_reference value, size_type count = 1){
+			
+			if (_cMem < _uMem + count)	// если памяти не достаточно, то расширяю память
 			{
-				_uMem += count;
-				_aMem += count;
+				// ! Можно оптимизировать потом
+				reallocate((_cMem + count) << 1);
 			}
-			for (i = _cMem -1; i >= pos ; --i)
+			if (pos > _uMem) //?  !(pos < _uMem || pos == _uMem)
+			{
+				throw std::out_of_range(std::string("_insert, выход за пределы массива POS ") + std::to_string(pos));
+			}
+			for (size_type i = _uMem - 1; i >= pos; --i)
+			{
 				_alloc.construct(&_data[i + count], _data[i]);
-			for (i = 0; i < count; i++)
-				_alloc.construct(&_data[pos + i], value);
+			}
+			for (size_type i = pos; i < pos + count; ++i)
+			{
+				_alloc.construct(&_data[i], value);
+			}
+			_uMem += count;
+
+			//if (_uMem + count > _cMem)
+			//	reallocate((_uMem + count) << 1);
+			
+
+			
+			
+			//else
+			//	_uMem += count;
+
+
+
+			//for (i = _cMem -1; i >= pos ; --i)
+			//	_alloc.construct(&_data[i + count], _data[i]);
+			//for (i = 0; i < count; i++)
+			//	_alloc.construct(&_data[pos + i], value);
 		}
 	public:
 		//template<typename iterator>
@@ -510,17 +522,17 @@ namespace ft{
 			othBegin	= v1.cbegin();
 			othEnd		= v1.cend();
 
-			while(thisBegin != thisEnd && othBegin != othEnd && *thisBegin == *othBegin){
+			while(thisBegin != thisEnd && othBegin != othEnd && *thisBegin <= *othBegin){
 				++thisBegin;
 				++othBegin;
 			}
 			if (thisBegin == thisEnd && othBegin == othEnd)
 				return false;
 			else if (thisBegin == thisEnd)
+				return true;
+			else if (othBegin == othEnd)	//! оптимизация
 				return false;
-			else if (othBegin == othEnd)
-				return false;
-			return *thisBegin < *othBegin;
+			return *thisBegin > *othBegin;;
 		}
 		bool operator >= (vector<T, Allocator> const & v1) const {
 			const_iterator thisBegin, thisEnd;
@@ -531,7 +543,7 @@ namespace ft{
 			othBegin	= v1.cbegin();
 			othEnd		= v1.cend();
 
-			while(thisBegin != thisEnd && othBegin != othEnd && *thisBegin < *othBegin){
+			while(thisBegin != thisEnd && othBegin != othEnd && *thisBegin == *othBegin){
 				++thisBegin;
 				++othBegin;
 			}
@@ -552,17 +564,17 @@ namespace ft{
 			othBegin	= v1.cbegin();
 			othEnd		= v1.cend();
 
-			while(thisBegin != thisEnd && othBegin != othEnd && *thisBegin > *othBegin){
+			while(thisBegin != thisEnd && othBegin != othEnd && *thisBegin == *othBegin){
 				++thisBegin;
 				++othBegin;
 			}
 			if (thisBegin == thisEnd && othBegin == othEnd)
 				return true;
 			else if (thisBegin == thisEnd)
-				return false;
-			else if (othBegin == othEnd)
 				return true;
-			return *thisBegin <= *othBegin;
+			else if (othBegin == othEnd)
+				return false;
+			return *thisBegin > *othBegin;;
 		}
 		bool operator == (vector<T, Allocator> const & v1) const {
 			const_iterator thisBegin, thisEnd;
@@ -582,7 +594,7 @@ namespace ft{
 			else if (thisBegin == thisEnd)
 				return false;
 			else if (othBegin == othEnd)
-				return true;
+				return false;
 			return false;
 		}
 		bool operator != (vector<T, Allocator> const & v1) const {return !operator==(v1);}

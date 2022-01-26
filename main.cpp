@@ -85,9 +85,9 @@ template<typename T>
 void print_struct_vector(T &Vec, std::string const & str)
 {
     std::cout << std::endl;
-    std::cout << str <<" values (char*): ";
+    std::cout << str <<" values (std::string*): ";
     for (size_t i = 0; i < Vec.size(); i++)
-        std::cout << (char*)(Vec[i].content) << " ";
+        std::cout << *(std::string *)(Vec[i].content) << " ";
     std::cout << std::endl;
     std::cout << ".size(): " << Vec.size() << std::endl;
     std::cout << ".capacity(): " << Vec.capacity() << std::endl;
@@ -181,11 +181,13 @@ int main()
     ft::vector<t_data> structVec3(++structVec2.begin(), --structVec2.end());
     print_struct_vector(structVec3, "structVec3");
 
-    std::cout << "intVec2 < intVec3  : " << (intVec2 < intVec3) << " | strVec3 < intVec2 : " << (strVec3 < strVec2) << std::endl;
+    std::cout << "intVec2 < intVec3  : " << (intVec2 < intVec3) << " | strVec3 < strVec2 : " << (strVec3 < strVec2) << std::endl;
 
 	print_vector(intVec2, "intVec2");
 	print_vector(intVec3, "intVec3");
-    std::cout << "intVec2 <= intVec3 : " << (intVec2 <= intVec3) << " | strVec3 <= intVec2 : " << (strVec3 <= strVec2) << std::endl;
+    std::cout << "intVec2 <= intVec3 : " << (intVec2 <= intVec3) << " | strVec3 <= strVec2 : " << (strVec3 <= strVec2) << std::endl;
+	print_vector(strVec3, "strVec3");
+	print_vector(intVec3, "intVec3");
     std::cout << "intVec2 > intVec3  : " << (intVec2 > intVec3)<< " | strVec3 > strVec2 : " << (strVec3 > strVec2) << std::endl;
     std::cout << "intVec2 >= intVec3 : " << (intVec2 >= intVec3)<< " | strVec3 >= strVec2 : " << (strVec3 >= strVec2) << std::endl;
     std::cout << "intVec2 == intVec3 : " << (intVec2 == intVec3)<< " | intVec3 == intVec2 : " << (strVec3 == strVec2) << std::endl;
@@ -214,8 +216,8 @@ int main()
     std::cout << "<+======================================================================+>\n" << std::endl;
 
     std::cout << "\t\t\t.resize( size_t n )" << std::endl;
-    free(data.content);
-    data.content = new int(42);
+    //free(data.content);
+    //data.content = new int(42);
     for (size_t i = 0; i < 10; i++)
     {
         int rndmdNbr = rand() % 10;
