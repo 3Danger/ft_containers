@@ -459,9 +459,9 @@ int main()
     std::cout << "<+======================================================================+>\n" << std::endl;
 
     std::cout << "\t\t.clear()" << std::endl;
-    //intVec.clear();
-    //strVec.clear();
-    //structVec.clear();
+    intVec.clear();
+    strVec.clear();
+    structVec.clear();
     print_vector(intVec, "intVec");
     print_vector(strVec, "strVec");
     print_struct_vector(structVec, "structVec");

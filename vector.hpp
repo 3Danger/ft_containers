@@ -488,6 +488,14 @@ namespace ft{
 			return iterator(_data, _uMem, position._iter);
 		}
 
+		void	clear(){
+			if (_data)
+				_alloc.deallocate(_data, _cMem);
+			_data = NULL;
+			_cMem = 0;
+			_uMem = 0;
+		}
+
 		bool operator > (vector<T, Allocator> const & v1) const {
 			const_iterator thisBegin, thisEnd;
 			const_iterator othBegin, othEnd;
