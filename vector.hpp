@@ -24,7 +24,7 @@ using std::min;
 #define NO_COMPARE_data "exception: vector::iterator: data is not comparable!"
 #define EX_DEF_NULL "exeption: trying deference NULL"
 
-#define RESERVE_DEFAULT 5
+#define RESERVE_DEFAULT 8
 
 #define IS_ITERATOR(IS_TYPE, THIS_TYPE)\
 typename enable_if<IS_TYPE<typename THIS_TYPE::iterator_category>::value, THIS_TYPE >::type
@@ -55,15 +55,15 @@ namespace ft{
 		typedef	value_type const 	&const_reference;
 		typedef	value_type const 	*const_pointer;
 		typedef ptrdiff_t			difference_type;
-		typedef size_t				size_type;
+		typedef unsigned long		size_type;
 	private:
 		size_type				_reserve;
 								//used memory
 		size_type				_uMem;
 								//capacity memory
 		size_type				_cMem;
-		Allocator				_alloc;
-		//std::allocator<T>		_alloc;
+		// Allocator				_alloc;
+		std::allocator<T>		_alloc;
 		pointer					_data;
 	private:
 		//* private methods
@@ -180,7 +180,7 @@ namespace ft{
 		~vector(){if(_data) _alloc.deallocate(_data, _cMem);}
 //*	public methods
 		inline difference_type	capacity()	const {return _cMem;}
-		inline size_type		size()		const {return _uMem;}
+		inline size_type			size()		const {return _uMem;}
 		inline bool				empty()		const {return !_uMem || !_data;}
 		difference_type			max_size()	const {return _alloc.max_size();}
 		reference		operator [](difference_type i)			{return _data[i];}
@@ -321,7 +321,7 @@ namespace ft{
 			reference check_range(size_type num){
 				if (not _data)
 					throw runtime_error("vector: data is empty");
-				if (num >= _usedMem || num < 0)
+				if (0 > num || num >= _usedMem)
 					return _data[_usedMem - 1];
 				return _data[std::abs(_direction - static_cast<int>(num))];
 			}
@@ -454,22 +454,6 @@ namespace ft{
 				_alloc.construct(&_data[i], value);
 			}
 			_uMem += count;
-
-			//if (_uMem + count > _cMem)
-			//	reallocate((_uMem + count) << 1);
-			
-
-			
-			
-			//else
-			//	_uMem += count;
-
-
-
-			//for (i = _cMem -1; i >= pos ; --i)
-			//	_alloc.construct(&_data[i + count], _data[i]);
-			//for (i = 0; i < count; i++)
-			//	_alloc.construct(&_data[pos + i], value);
 		}
 	public:
 		//template<typename iterator>
@@ -486,6 +470,21 @@ namespace ft{
 			while (first != last)
 				_insert(position._iter, *first++);
 			return iterator(_data, _uMem, position._iter);
+		}
+
+		const_iterator erase(const_iterator first)
+		{
+			size_type index;
+			std::allocator<int> alloc;
+			
+			index = std::abs(first._direction - static_cast<int>(first._iter));
+			if (index >= _uMem)
+				throw std::runtime_error("vector: erase: iterator is out of range");
+			// delete _data[index];
+			--_uMem;
+			for(size_type i = index; i < _uMem; ++i)
+				_alloc.construct(&_data[i], _data[i + 1]);
+			return const_iterator(_data, _uMem, index, first._direction);
 		}
 
 		void	clear(){
