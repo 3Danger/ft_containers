@@ -1,2 +1,7 @@
 ft_containers_tests*
 test_container
+test_container_std
+.vscode
+a.out
+FT_VECTOR
+STD_VECTOR
