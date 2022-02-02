@@ -15,6 +15,7 @@
 #include <typeinfo>
 
 #include <vector>
+#include "vectorIterator.hpp"
 
 using std::runtime_error;
 using std::allocator;
@@ -45,24 +46,25 @@ typename enable_if<is_same<TYPE1, TYPE2>::value, TYPE1>::type
 namespace ft{
 	template <class T, class Allocator = std::allocator<T> >
 	class vector{
-//		friend class		iterator;
-//		friend class		reverse_iterator;
 	public:
+		typedef class ft::vIterator<T>		iterator;
+		typedef class ft::cvIterator<T>		const_iterator;
+		typedef class ft::rvIterator<T>		reverse_iterator;
+		typedef class ft::crvIterator<T>	const_reverse_iterator;
+
 		typedef Allocator			allocator_type;
 		typedef	T					value_type;
-		typedef	value_type		 	&reference;
-		typedef	value_type		 	*pointer;
-		typedef	value_type const 	&const_reference;
-		typedef	value_type const 	*const_pointer;
+		typedef	T &					reference;
+		typedef	T *					pointer;
+		typedef	T const &			const_reference;
+		typedef	T const *			const_pointer;
 		typedef ptrdiff_t			difference_type;
 		typedef unsigned long		size_type;
 	private:
 		size_type				_reserve;
-								//used memory
 		size_type				_uMem;
-								//capacity memory
 		size_type				_cMem;
-		// Allocator				_alloc;
+		// Allocator			_alloc;
 		std::allocator<T>		_alloc;
 		pointer					_data;
 	private:
@@ -104,7 +106,8 @@ namespace ft{
 				throw runtime_error(NO_MEM_SPACE);
 			for(i = 0; i < newUsedMem; ++i)	//  _data[0...4]
 				newAlloc.construct(&newData[i], _data[i]);		
-			_alloc.deallocate(_data, _cMem);
+			// _alloc.deallocate(_data, _cMem);
+			delete_data();
 			_alloc = newAlloc;
 			_uMem = newUsedMem;
 			_cMem = newCMem;
@@ -113,6 +116,8 @@ namespace ft{
 
 		void delete_data(){
 			if (_data) {
+				for (size_t i = 0; i < _cMem; i++)
+					_alloc.destroy(&_data[i]);
 				_alloc.deallocate(_data, _cMem);
 				_data = NULL;
 				_uMem = 0;
@@ -177,7 +182,7 @@ namespace ft{
 		vector(difference_type n){
 			setterConstructor(RESERVE_DEFAULT, 0, max(static_cast<ulong>(n << 1), static_cast<ulong>(RESERVE_DEFAULT)));
 		}
-		~vector(){if(_data) _alloc.deallocate(_data, _cMem);}
+		~vector(){delete_data();}
 //*	public methods
 		inline difference_type	capacity()	const {return _cMem;}
 		inline size_type			size()		const {return _uMem;}
@@ -270,164 +275,30 @@ namespace ft{
 		}
 
 		void reserve(const size_type newSize){
-			if (newSize > _cMem)
-				reallocate(newSize);
+			if (newSize >= _cMem)
+				reallocate(newSize + 1);
 			_reserve = newSize;
 		}
 
 		void	shrink_to_fit(){
 			if (_uMem == _cMem)
 				return ;
-			reallocate(_uMem);
+			reallocate(_uMem + 1);
 		}
 
 		void	pop_back(){
 			//delete _data[--_usedMem];
 			--_uMem;
 		}
-		// * iterators
-	public:
-		class const_iterator {
-		public:
-			typedef T value_type;
-			typedef T *pointer;
-			typedef T &reference;
-			typedef const T *const_pointer;
-			typedef const T &const_reference;
-			typedef std::random_access_iterator_tag iterator_category;
-		protected:
-			friend class vector;
-			pointer			_data;
-			size_type		_usedMem;
-			difference_type	_iter;
-			int				_direction;
-			const_iterator(pointer data, difference_type usedMem, difference_type currentIter, difference_type direction = 0)
-					: _data(data), 
-					_usedMem(usedMem), 
-					_iter(currentIter), 
-					_direction(direction) {}
-		public:
-			const_iterator(const_iterator const & oth)
-				:_data(oth._data), _usedMem(oth._usedMem), _iter(oth._iter), _direction(oth._direction){}
-			const_iterator(difference_type num)
-					: _data(NULL), _usedMem(0), _iter(num) {}
-			const_iterator()
-					: _data(NULL), _usedMem(0), _iter(0) {}
-		protected:
-			void compare(const_iterator const &oth) {
-				if (oth._data != _data)
-					throw runtime_error(NO_COMPARE_data);
-			}
-			reference check_range(size_type num){
-				if (not _data)
-					throw runtime_error("vector: data is empty");
-				if (0 > num || num >= _usedMem)
-					return _data[_usedMem - 1];
-				return _data[std::abs(_direction - static_cast<int>(num))];
-			}
-			const_reference check_range(size_type num) const {
-				if (not _data)
-					throw runtime_error("vector: data is empty");
-				if (num >= _usedMem || num < 0)
-					return _data[_usedMem - 1];
-				return _data[std::abs(_direction - static_cast<int>(num))];
-			}
-
-		public:
-			const_pointer	operator->() {return &check_range(_iter);}
-			const_reference operator*() const {return check_range(_iter);}
-			const_reference	operator[](difference_type num){return check_range(num);}
-			bool operator< (const const_iterator &rhs) const { return _iter <  rhs._iter; }
-			bool operator==(const const_iterator &rhs) const { return _iter == rhs._iter; }
-			bool operator!=(const const_iterator &rhs) const { return _iter != rhs._iter; }
-			bool operator> (const const_iterator &rhs) const { return _iter >  rhs._iter; }
-			bool operator<=(const const_iterator &rhs) const { return _iter <= rhs._iter; }
-			bool operator>=(const const_iterator &rhs) const { return _iter >= rhs._iter; }
-
-			const_iterator operator--(int) {const_iterator tmp(*this); --_iter;	return tmp;}
-			const_iterator operator++(int) {const_iterator tmp(*this); ++_iter;	return tmp;}
-			const_iterator &operator++() {_iter++; return *this;}
-			const_iterator &operator--() {_iter--; return *this;}
-			friend const_iterator operator-(const const_iterator & it1, const const_iterator & it2);
-			friend const_iterator operator+(const const_iterator & it1, const const_iterator & it2);
-			const_iterator &operator+=(difference_type const num){_iter += num; return *this;}
-			const_iterator &operator-=(difference_type const num){_iter -= num; return *this;}
-			const_iterator &operator=(const const_iterator &oth) {
-				const_iterator::_direction = oth._direction;
-				const_iterator::_usedMem = oth._usedMem;
-				const_iterator::_iter = oth._iter;
-				const_iterator::_data = oth._data;
-				return *this;
-			}
-			const_iterator operator+(const const_iterator & oth) const {
-				const_iterator tmp(oth);
-				tmp._iter += oth._iter;
-				return tmp;
-			}
-			const_iterator operator-(const const_iterator & oth) const {
-				const_iterator tmp(oth);
-				tmp._iter -= oth._iter;
-				return tmp;
-			}
-
-			const_iterator operator+(difference_type num) const {
-				const_iterator tmp(*this);
-				tmp._iter += num;
-				return tmp;
-			}
-
-			const_iterator operator-(difference_type num) const {
-				const_iterator tmp(*this);
-				tmp._iter -= num;
-				return tmp;
-			}
-		};
-
-		class iterator: public const_iterator{
-			typedef	const_iterator super;
-			friend class vector<T, Allocator>;
-			iterator(pointer data, difference_type usedMem, difference_type iter): const_iterator(data, usedMem, iter){}
-		protected:
-			friend class ft::vector<T>;
-		public:
-			iterator(){}
-			iterator(const_iterator const & oth): const_iterator(oth){}
-			reference	operator*()		{return this->check_range(super::_iter);}
-			pointer		operator->()	{return &this->check_range(super::_iter);}
-			reference	&operator[](difference_type const num){return super::check_range(num);}
-		};
-		class const_reverse_iterator: public const_iterator{
-			typedef	const_iterator super;
-			friend class vector<T, Allocator>;
-			const_reverse_iterator(pointer data, difference_type usedMem, difference_type iter)
-			: super(data, usedMem, iter, usedMem - 1){}
-		public:
-			const_reverse_iterator(){}
-			const_reverse_iterator(const_iterator const & oth):super(oth){}
-		};
-		class reverse_iterator: public const_iterator{
-			typedef	const_iterator super;
-			friend class vector<T, Allocator>;
-			reverse_iterator(pointer data, difference_type usedMem, difference_type iter)
-				: super(data, usedMem, iter, usedMem - 1){}
-		public:
-			reverse_iterator(){}
-			reverse_iterator(const_iterator const & oth)
-				:super(oth), super::_direction(_uMem - 1){}
-			reference	operator*()		{return this->check_range(super::_iter);}
-			pointer		operator->()	{return &this->check_range(super::_iter);}
-			reference	&operator[](difference_type const num){return super::check_range(num);}
-		};
 // * begin and end
-		reverse_iterator	rbegin(){return reverse_iterator(_data, _uMem, _uMem -1);}
-		iterator			begin(){return iterator(_data, _uMem, 0);}
-		reverse_iterator	rend(){return reverse_iterator(_data, _uMem, -1);}
-		iterator			end(){return iterator(_data, _uMem, _uMem);}
-
-		const_reverse_iterator	crbegin() const {return const_reverse_iterator(_data, _uMem, _uMem -1);}
-		const_iterator			cbegin() const {return const_iterator(_data, _uMem, 0);}
-		const_reverse_iterator	crend() const {return const_reverse_iterator(_data, _uMem, -1);}
-		const_iterator			cend() const {return const_iterator(_data, _uMem, _uMem);}
+		iterator			 begin(void)		{return (iterator(_data));};
+		const_iterator		 cbegin(void) const	{return (const_iterator(_data));};
+		iterator			 end(void)			{return (iterator(_data + _uMem));};
+		const_iterator		 cend(void) const	{return (const_iterator(_data + _uMem));};
+		reverse_iterator		 rbegin(void)	{return (reverse_iterator(_data + _uMem - 1));};
+		const_reverse_iterator	 crbegin(void) const	{return (const_reverse_iterator(_data + _uMem - 1));};
+		reverse_iterator		 rend(void)			{return (reverse_iterator(_data - 1));};
+		const_reverse_iterator	 crend(void) const	{return (const_reverse_iterator(_data - 1));};
 
 		const_reference		front() const	{this->checkData(); return _data[0];}
 		const_reference		back()	const	{this->checkData(); return _data[_uMem -1];}
@@ -472,24 +343,30 @@ namespace ft{
 			return iterator(_data, _uMem, position._iter);
 		}
 
-		const_iterator erase(const_iterator first)
+
+		iterator erase(iterator first)
 		{
 			size_type index;
 			std::allocator<int> alloc;
 			
-			index = std::abs(first._direction - static_cast<int>(first._iter));
-			if (index >= _uMem)
-				throw std::runtime_error("vector: erase: iterator is out of range");
 			// delete _data[index];
+			index = &*first - _data;
+			if (index >= _uMem)
+				throw std::runtime_error(EX_DEF_NULL);
 			--_uMem;
 			for(size_type i = index; i < _uMem; ++i)
 				_alloc.construct(&_data[i], _data[i + 1]);
-			return const_iterator(_data, _uMem, index, first._direction);
+			_alloc.destroy(&_data[_uMem]);
+			return iterator(_data);
 		}
 
 		void	clear(){
 			if (_data)
+			{
+				for (size_type i = 0; i < _uMem; i++)
+					_alloc.destroy(&_data[i]);
 				_alloc.deallocate(_data, _cMem);
+			}
 			_data = NULL;
 			_cMem = 0;
 			_uMem = 0;
@@ -602,22 +479,5 @@ namespace ft{
 		}
 		bool operator != (vector<T, Allocator> const & v1) const {return !operator==(v1);}
 	};
-	//template <typename V>
-	//class reverse_iterator: public V{
-	//	public:
-	//	template<typename VI>
-	//	reverse_iterator(VI const &oth_iter): V::V(oth_iter){}
-	//	V&	base(){return this->V;}
-	//};
-
-	//class _reverse_iterator: public std::vector<int>::iterator{
-	//	typedef typename _reverse_iterator::std::vector<int>::iterator base;
-	//	public:
-	//	std::vector<int>::iterator::
-	//	template<typename VI>
-	//	reverse_iterator(VI const &oth_iter): base::(oth_iter){}
-	//};
-	//template <typename V>
-	//class const_reverse_iterator: public V{};
 };
 #endif //CONTAINERYYY_VECTOR_H
