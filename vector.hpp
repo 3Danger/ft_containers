@@ -291,14 +291,14 @@ namespace ft{
 			--_uMem;
 		}
 // * begin and end
-		iterator			 begin(void)		{return (iterator(_data));};
-		const_iterator		 cbegin(void) const	{return (const_iterator(_data));};
 		iterator			 end(void)			{return (iterator(_data + _uMem));};
 		const_iterator		 cend(void) const	{return (const_iterator(_data + _uMem));};
-		reverse_iterator		 rbegin(void)	{return (reverse_iterator(_data + _uMem - 1));};
+		iterator			 begin(void)		{return (iterator(_data));};
+		const_iterator		 cbegin(void) const	{return (const_iterator(_data));};
+		reverse_iterator		 rend(void)				{return (reverse_iterator(_data - 1));};
+		const_reverse_iterator	 crend(void) const		{return (const_reverse_iterator(_data - 1));};
+		reverse_iterator		 rbegin(void)			{return (reverse_iterator(_data + _uMem - 1));};
 		const_reverse_iterator	 crbegin(void) const	{return (const_reverse_iterator(_data + _uMem - 1));};
-		reverse_iterator		 rend(void)			{return (reverse_iterator(_data - 1));};
-		const_reverse_iterator	 crend(void) const	{return (const_reverse_iterator(_data - 1));};
 
 		const_reference		front() const	{this->checkData(); return _data[0];}
 		const_reference		back()	const	{this->checkData(); return _data[_uMem -1];}
@@ -306,43 +306,37 @@ namespace ft{
 		reference			back()			{this->checkData(); return _data[_uMem -1];}
 	private:
 		void	_insert(size_type pos, const_reference value, size_type count = 1){
-			
 			if (_cMem < _uMem + count)	// если памяти не достаточно, то расширяю память
-			{
-				// ! Можно оптимизировать потом
-				reallocate((_cMem + count) << 1);
-			}
-			if (pos > _uMem) //?  !(pos < _uMem || pos == _uMem)
-			{
-				throw std::out_of_range(std::string("_insert, выход за пределы массива POS ") + std::to_string(pos));
-			}
+				reallocate((_cMem + count) << 1); // ! Можно оптимизировать потом
+			if (pos > _uMem)
+				throw std::out_of_range\
+					(std::string("_insert, выход за пределы массива POS ")
+					 	+ std::to_string(pos));
 			for (size_type i = _uMem - 1; i >= pos; --i)
-			{
 				_alloc.construct(&_data[i + count], _data[i]);
-			}
 			for (size_type i = pos; i < pos + count; ++i)
-			{
 				_alloc.construct(&_data[i], value);
-			}
 			_uMem += count;
 		}
 	public:
 		//template<typename iterator>
-		iterator	insert(const_iterator pos, const_reference value){
-			_insert(pos._iter, value);
+		iterator	insert(iterator pos, const_reference value){
+			_insert(&*pos -_data, value);
 			return pos;
 		}
-		iterator	insert(const_iterator pos, size_type count, value_type value){
-			_insert(pos._iter, value, count);
+		iterator	insert(iterator pos, size_type count, value_type value){
+			_insert(&*pos - _data, value, count);
 			return pos;
 		}
 		template <class InputIterator>
-    	iterator insert (const_iterator position, InputIterator first, InputIterator last, IS_NOT_NUM(InputIterator)* = 0){
-			while (first != last)
-				_insert(position._iter, *first++);
-			return iterator(_data, _uMem, position._iter);
-		}
+    	iterator insert (iterator position, InputIterator first, InputIterator last, IS_NOT_NUM(InputIterator)* = 0){
+			size_type pos, tpos;
 
+			tpos = pos = &*position - _data;
+			for (;first != last; ++pos, ++first)
+				_insert(pos, *first);
+			return iterator(_data + tpos);
+		}
 
 		iterator erase(iterator first)
 		{

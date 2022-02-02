@@ -10,6 +10,7 @@ namespace ft
 			typedef T value_type;
 			typedef T& reference;
 			typedef T* pointer;
+			typedef std::random_access_iterator_tag iterator_category;
 		protected:
 			pointer _ptr;
 		public:
@@ -135,6 +136,7 @@ namespace ft
 			typedef T value_type;
 			typedef T& reference;
 			typedef T* pointer;
+			typedef std::random_access_iterator_tag iterator_category;
 			rvIterator(void)
 			{};
 			rvIterator(const rvIterator &other)
@@ -259,6 +261,7 @@ namespace ft
 			typedef T value_type;
 			typedef T& reference;
 			typedef T* pointer;
+			typedef std::random_access_iterator_tag iterator_category;
 			cvIterator(void)
 			{};
 			cvIterator(pointer ptr)
@@ -292,6 +295,7 @@ namespace ft
 			typedef T value_type;
 			typedef T& reference;
 			typedef T* pointer;
+			typedef std::random_access_iterator_tag iterator_category;
 			crvIterator(void)
 			{};
 			crvIterator(pointer ptr)
