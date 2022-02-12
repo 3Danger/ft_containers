@@ -16,15 +16,9 @@ namespace ft
 		public:
 			 vIterator(void)
 			{};
-			 vIterator(const vIterator &other)
-			{
-				*this = other;
-			};
-			 vIterator(pointer ptr)
-			: _ptr(ptr)
-			{};
-			 ~vIterator(void)
-			{};
+			 vIterator(const vIterator &other){ *this = other;};
+			 vIterator(pointer ptr): _ptr(ptr){};
+			 ~vIterator(void){};
 			vIterator &operator=(const vIterator &other)
 			{
 				_ptr = other._ptr;
@@ -52,38 +46,14 @@ namespace ft
 				operator--();
 				return (tmp);
 			};
-			bool operator==(const vIterator &other) const
-			{
-				return (_ptr == other._ptr);
-			};
-			bool operator!=(const vIterator &other) const
-			{
-				return (_ptr != other._ptr);
-			};
-			bool operator>(const vIterator &other) const
-			{
-				return (_ptr > other._ptr);
-			};
-			bool operator>=(const vIterator &other) const
-			{
-				return (_ptr >= other._ptr);
-			};
-			bool operator<(const vIterator &other) const
-			{
-				return (_ptr < other._ptr);
-			};
-			bool operator<=(const vIterator &other) const
-			{
-				return (_ptr <= other._ptr);
-			};
-			value_type &operator*(void)
-			{
-				return (*_ptr);
-			};
-			value_type *operator->(void)
-			{
-				return (_ptr);
-			};
+			bool operator==(const vIterator &other) const{ return (_ptr == other._ptr);};
+			bool operator!=(const vIterator &other) const{ return (_ptr != other._ptr);};
+			bool operator>(const vIterator &other) const{ return (_ptr > other._ptr);};
+			bool operator>=(const vIterator &other) const{ return (_ptr >= other._ptr);};
+			bool operator<(const vIterator &other) const{ return (_ptr < other._ptr);};
+			bool operator<=(const vIterator &other) const{ return (_ptr <= other._ptr);};
+			value_type &operator*(void){ return (*_ptr);};
+			value_type *operator->(void){ return (_ptr);};
 			vIterator operator+(int n) const
 			{
 				vIterator tmp(*this);
@@ -124,10 +94,7 @@ namespace ft
 				}
 				return (*this);
 			};
-			value_type &operator[](int n) const
-			{
-				return (*(*this + n));
-			}
+			value_type &operator[](int n) const{ return (*(*this + n));}
 	};
 	template <class T>
 	class rvIterator : public vIterator<T>
@@ -139,14 +106,8 @@ namespace ft
 			typedef std::random_access_iterator_tag iterator_category;
 			rvIterator(void)
 			{};
-			rvIterator(const rvIterator &other)
-			{
-				*this = other;
-			};
-			rvIterator(pointer ptr)
-			{
-				this->_ptr = ptr;
-			};
+			rvIterator(const rvIterator &other){*this = other;};
+			rvIterator(pointer ptr){this->_ptr = ptr;};
 			~rvIterator(void)
 			{};
 			rvIterator &operator=(const rvIterator &other)
@@ -204,38 +165,14 @@ namespace ft
 				}
 				return (*this);
 			};
-			bool operator==(const rvIterator &other) const
-			{
-				return (this->_ptr == other._ptr);
-			};
-			bool operator!=(const rvIterator &other) const
-			{
-				return (this->_ptr != other._ptr);
-			};
-			bool operator>(const rvIterator &other) const
-			{
-				return (this->_ptr > other._ptr);
-			};
-			bool operator>=(const rvIterator &other) const
-			{
-				return (this->_ptr >= other._ptr);
-			};
-			bool operator<(const rvIterator &other) const
-			{
-				return (this->_ptr < other._ptr);
-			};
-			bool operator<=(const rvIterator &other) const
-			{
-				return (this->_ptr <= other._ptr);
-			};
-			value_type &operator*(void)
-			{
-				return (*this->_ptr);
-			};
-			value_type *operator->(void)
-			{
-				return (this->_ptr);
-			};
+			bool operator==(const rvIterator &other) const{return (this->_ptr == other._ptr);};
+			bool operator!=(const rvIterator &other) const{return (this->_ptr != other._ptr);};
+			bool operator>(const rvIterator &other) const{return (this->_ptr > other._ptr);};
+			bool operator>=(const rvIterator &other) const{return (this->_ptr >= other._ptr);};
+			bool operator<(const rvIterator &other) const{return (this->_ptr < other._ptr);};
+			bool operator<=(const rvIterator &other) const{return (this->_ptr <= other._ptr);};
+			value_type &operator*(void){return (*this->_ptr);};
+			value_type *operator->(void){return (this->_ptr);};
 			rvIterator operator+(int n) const
 			{
 				rvIterator tmp(*this);
@@ -264,14 +201,8 @@ namespace ft
 			typedef std::random_access_iterator_tag iterator_category;
 			cvIterator(void)
 			{};
-			cvIterator(pointer ptr)
-			{
-				this->_ptr = ptr;
-			};
-			cvIterator(const cvIterator &other)
-			{
-				*this = other;
-			};
+			cvIterator(pointer ptr){this->_ptr = ptr;};
+			cvIterator(const cvIterator &other){*this = other;};
 			~cvIterator(void)
 			{};
 			cvIterator &operator=(const cvIterator &other)
@@ -298,14 +229,8 @@ namespace ft
 			typedef std::random_access_iterator_tag iterator_category;
 			crvIterator(void)
 			{};
-			crvIterator(pointer ptr)
-			{
-				this->_ptr = ptr;
-			};
-			crvIterator(const crvIterator &other)
-			{
-				*this = other;
-			};
+			crvIterator(pointer ptr){this->_ptr = ptr;};
+			crvIterator(const crvIterator &other){*this = other;};
 			~crvIterator(void)
 			{};
 			crvIterator &operator=(const crvIterator &other)

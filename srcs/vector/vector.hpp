@@ -159,7 +159,7 @@ namespace ft{
 		template <typename InputIterator>
 		vector(InputIterator start, InputIterator finish, const allocator_type & alloc = allocator_type(),
 			   IS_ITERATOR(is_input_iterator, InputIterator) * = NULL)
-			   : _alloc(alloc){
+				: _alloc(alloc){
 			setterConstructor();
 			for(; start != finish; ++start)
 				push_back(*start);
