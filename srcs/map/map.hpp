@@ -26,13 +26,15 @@ namespace ft
 		typedef		value_type const&	const_reference;
 		typedef		value_type *		pointer;	 
 		typedef		value_type const*	const_pointer;
+		typedef     Node<value_type, Compare> node_type;
 	    //* typedef bidirectional iterator
 	    //* typedef bidirectional reverse_iterator
 	    
 	private:
-	    Node<value_type, Compare> *_node = NULL;
-	    unsigned int sizeNodes = 0;
+	    node_type *_node = NULL;
+	    size_type sizeNodes = 0;
 	    Allocator _allocator;
+	    Compare _cmp;
 	 
 		// template <class Iter, class NodeType>
 		// struct /*unspecified*/ {
@@ -88,91 +90,58 @@ namespace ft
 
 		// insert
 
-		void erase( iterator pos );
-		void erase( iterator first, iterator last );
-		size_type erase( const Key& key );
-		// erases elements
-		// (public member function)
-		// swap
+		// void erase( iterator pos );
+		// void erase( iterator first, iterator last );
+		// size_type erase( const Key& key );
 		 
-		// swaps the contents
-		// (public member function)
-		// extract
+		// void swap( map& other );
+		
+		// size_type count( const Key& key ) const;
 		  
-		// (C++17)
 		 
-		// extracts nodes from the container
-		// (public member function)
-		// merge
-		  
-		// (C++17)
+		// iterator find( const Key& key );
+		// const_iterator find( const Key& key ) const;
+		// std::pair<iterator,iterator> equal_range( const Key& key );
+		// std::pair<const_iterator,const_iterator> equal_range( const Key& key ) const;
+
+		// iterator lower_bound( const Key& key );
+		// const_iterator lower_bound( const Key& key ) const;
+		
+		// iterator upper_bound( const Key& key );
+		// const_iterator upper_bound( const Key& key ) const;
 		 
-		// splices nodes from another container
-		// (public member function)
-		// Lookup
-		// count
+		//!
+
+		key_compare key_comp() const{
+			return _cmp;
+		}
+		
+		class value_compare
+		{
+			friend class map;
+			protected:
+				Compare comp;
+				value_compare (Compare c) : comp(c) {};
+			public:
+				typedef bool result_type;
+				typedef value_type first_argument_type;
+				typedef value_type second_argument_type;
+				bool operator() (const value_type& x, const value_type& y) const
+				{
+					return comp(x.first, y.first);
+				};
+		};
+
+		// value_comp value_compare() const{
+		// 	return value_compare(_cmp);
+		// } 
 		 
-		// returns the number of elements matching specific key
-		// (public member function)
-		// find
-		 
-		// finds element with specific key
-		// (public member function)
-		// contains
-		  
-		// (C++20)
-		 
-		// checks if the container contains element with specific key
-		// (public member function)
-		// equal_range
-		 
-		// returns range of elements matching a specific key
-		// (public member function)
-		// lower_bound
-		 
-		// returns an iterator to the first element not less than the given key
-		// (public member function)
-		// upper_bound
-		 
-		// returns an iterator to the first element greater than the given key
-		// (public member function)
-		// Observers
-		// key_comp
-		 
-		// returns the function that compares keys
-		// (public member function)
-		// value_comp
-		 
-		// returns the function that compares keys in objects of type value_type
-		// (public member function)
-		// Non-member functions
-		// operator==
-		// operator!=
-		// operator<
-		// operator<=
-		// operator>
-		// operator>=
-		// operator<=>
-		  
-		// (removed in C++20)
-		// (removed in C++20)
-		// (removed in C++20)
-		// (removed in C++20)
-		// (removed in C++20)
-		// (C++20)
-		 
-		// lexicographically compares the values in the map
-		// (function template)
-		// std::swap(std::map)
-		 
-		// specializes the std::swap algorithm
-		// (function template)
-		// erase_if(std::map)
-		  
-		// (C++20)
-		 
-		// Erases all elements satisfying specific criteria
-		// (function template)
+		// template< class Key, class T, class Compare, class Alloc >
+		// bool operator==(const map<Key,T,Compare,Alloc>& lhs,
+        //          const map<Key,T,Compare,Alloc>& rhs );
+		// template< class Key, class T, class Compare, class Alloc >
+		// void swap(map<Key,T,Compare,Alloc>& lhs,
+        //    map<Key,T,Compare,Alloc>& rhs );
 	
 	};
 } // namespace ft

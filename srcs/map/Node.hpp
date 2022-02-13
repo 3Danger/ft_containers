@@ -37,17 +37,14 @@ namespace ft{//typename _Alloc
 
 		static bool insert(pair_type* value, Node ** node){
 			if (not *node)
-			{
 				*node = newNode(value);
-				return true;
-			}
+			else if (*value == *node[0]->_value)
+				return false;
 			else if (comparator (*value, *node[0]->_value))
-				if (not node[0]->_rnode)
-					return _rnode->insert(value, &(node[0]->_rnodem, *node));
-			else if (comparator (*value, *node[0]->_value))
-				if (not node[0]->_lnode)
-					return _lnode->insert(value, &(node[0]->_lnodem, *node));
-			return false;
+				return _rnode->insert(value, &(node[0]->_rnode, *node));
+			else
+				return _lnode->insert(value, &(node[0]->_lnode, *node));
+			return true;
 		}
 
 		static Node * newNode(pair_type * value, Node ** node, Node * root){
