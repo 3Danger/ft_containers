@@ -12,6 +12,7 @@ namespace ft
 		constexpr pair(): first({}), second({}){};
 		pair(const pair&) = default;
 		pair(pair&&) = default;
+		pair(const std::pair<T1, T2> &stdPair): first(stdPair.first), second(stdPair.second){}
 		constexpr pair( const T1& Val1, const T2& Val2) :first(Val1), second(val2){}    
 		pair& operator=(const pair& p): first(p.first), second(p.second){}
 		pair& operator=(pair&& p) noexcept {*this = p;}

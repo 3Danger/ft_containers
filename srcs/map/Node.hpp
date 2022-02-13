@@ -6,48 +6,54 @@
 #include <memory>
 
 namespace ft{//typename _Alloc
-	template <typename T, typename _Alloc = std::allocator<T> >
+	template <typename pair_type, class Compare, class _Alloc = std::allocator<pair_type> >
 	class Node
 	{
 	public:
-		// typedef class std::allocator<T> _Alloc;
-		Node<T> *_root;
-		Node<T> *_rnode;
-		Node<T> *_lnode;
+		// typedef class std::allocator<pair_type> _Alloc;
+		static Compare comparator;
+		Node<pair_type> *_root;
+		Node<pair_type> *_rnode;
+		Node<pair_type> *_lnode;
 		_Alloc _allocNode;
-		T* _value;
+		pair_type* _value;
 		bool isBlack;
 		Node()
 			:_root(NULL),
 			_rnode(NULL),
 			_lnode(NULL),
 			_value(NULL) {}
-		Node(T* value, Node * root)
-			:_root(NULL),
+		Node(pair_type* value, Node * root = NULL)
+			:_root(root),
 			_rnode(NULL),
 			_lnode(NULL),
 			_value(value) {}
-		explicit Node(const Node *node)
-			:_root(NULL),
+		explicit Node(Node *node)
+			:_root(node->root),
 			_rnode(node->_rnode),
 			_lnode(node->_lnode),
 			_value(node->_value) {}
 		~Node();
 
-		static void insert(T* value, Node ** root){
-			if (not *root)
-				*root = newNode(value);
-			else if (not root[0]->_value)
-				root[0]->_value = value;
-			else if (*value > *root[0]->_value)
-				_rnode ? _rnode->insert(value, root) : _rnode = newNode(value, *root);
-			else if (*value < *root[0]->_value)
-				_lnode ? _lnode->insert(value, root) : _lnode = newNode(value, *root);
+		static bool insert(pair_type* value, Node ** node){
+			if (not *node)
+			{
+				*node = newNode(value);
+				return true;
+			}
+			else if (comparator (*value, *node[0]->_value))
+				if (not node[0]->_rnode)
+					return _rnode->insert(value, &(node[0]->_rnodem, *node));
+			else if (comparator (*value, *node[0]->_value))
+				if (not node[0]->_lnode)
+					return _lnode->insert(value, &(node[0]->_lnodem, *node));
+			return false;
 		}
 
-		static Node * newNode(T * value, Node * root = NULL){
-			Node node = _allocNode.allocate(1);
-			_allocNode.construct(node->_value, *value, root);
+		static Node * newNode(pair_type * value, Node ** node, Node * root){
+			// Node node = _allocNode.allocate(1);
+			*node = _Alloc::allocate(1);
+			_Alloc::construct(node[0]->_value, *value, root);
 			return node;
 		}
 	};    
