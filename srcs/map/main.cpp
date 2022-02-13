@@ -6,27 +6,32 @@
 #include <string>
 
 
-#define FT
-#ifndef FT
-#include <map>
-using namespace std;
-#else
+// #define FT
+// #ifndef FT
+// #include <map>
+// using namespace std;
+// #else
 #include "map.hpp"
 using namespace ft;
-#endif
+// #endif
 
-// #define VISUAL
-#define CONSOLE
+#define VISUAL
+// #define CONSOLE
 
 int    main()
 {
-#ifdef VISUAL;
-
-
-
-#endif
-
-#ifdef CONSOLE;
+    map<int, std::string> m;
+    
+    m.insert(pair<int, std::string>(6, "are"));
+    m.insert(pair<int, std::string>(1, "hello"));
+    m.insert(pair<int, std::string>(7, "you"));
+    m.insert(pair<int, std::string>(3, "my"));
+    m.insert(pair<int, std::string>(4, "friend"));
+    m.insert(pair<int, std::string>(5, "how"));
+    m.insert(pair<int, std::string>(2, "world"));
+}
+/*
+#ifdef CONSOLE
     // srand(time(0));
     // std::cout <<"\n##############################################################" << std::endl;
     // std::cout << "###                     ";
@@ -165,5 +170,4 @@ int    main()
 
     // std::cout << "map2.find(6)->first: " << map2.find(6)->first << std::endl;
     // std::cout << "map2.find(6)->second: " << map2.find(6)->second << std::endl;
-#endif
-}
+#endif*/
