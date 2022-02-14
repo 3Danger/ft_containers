@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string>
 
+#include "Visualize.hpp"
+
 
 // #define FT
 // #ifndef FT
@@ -12,6 +14,7 @@
 // using namespace std;
 // #else
 #include "map.hpp"
+
 using namespace ft;
 // #endif
 
@@ -29,6 +32,9 @@ int    main()
     m.insert(pair<int, std::string>(4, "friend"));
     m.insert(pair<int, std::string>(5, "how"));
     m.insert(pair<int, std::string>(2, "world"));
+    Visualize<int, std::string> v(m);
+    v.run();
+    
 }
 /*
 #ifdef CONSOLE

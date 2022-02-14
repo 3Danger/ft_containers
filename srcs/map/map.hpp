@@ -3,8 +3,6 @@
 #include <algorithm>
 #include <memory>
 #include "Comparator.hpp"
-
-// #include "Node.hpp"
 #include "pair.hpp"
 
 namespace ft
@@ -30,10 +28,10 @@ namespace ft
 	    //* typedef bidirectional iterator
 	    //* typedef bidirectional reverse_iterator
 	    
-	private:
 	// * variables
 		struct Node;
 	    Node *_node = NULL;
+	private:
 	    size_type sizeNodes = 0;
 	    // *Allocator _allocator;
 	    std::allocator<value_type> _allocator;
@@ -156,7 +154,7 @@ namespace ft
         
         
         //* SECOND
-    private:
+    // private:
 		struct Node
 		{
 			Node *_root;
