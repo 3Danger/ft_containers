@@ -32,7 +32,7 @@ int    main()
     {
         m.insert(pair<int, std::string>(std::rand() % 20, "_"));
     }
-    
+    m._node->isBlack = true;
     // m.insert(pair<int, std::string>(3, "_"));
     // m.insert(pair<int, std::string>(7, "_"));
     // m.insert(pair<int, std::string>(4, "_"));
