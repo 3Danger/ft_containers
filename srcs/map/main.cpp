@@ -17,7 +17,6 @@
 // using namespace std;
 // #else
 #include "map.hpp"
-
 using namespace ft;
 // #endif
 
@@ -28,11 +27,10 @@ int    main()
 {
     map<int, std::string> m;
     std::srand(22);
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 7; i++)
     {
         m.insert(pair<int, std::string>(std::rand() % 20, "_"));
     }
-    m._node->isBlack = true;
     // m.insert(pair<int, std::string>(3, "_"));
     // m.insert(pair<int, std::string>(7, "_"));
     // m.insert(pair<int, std::string>(4, "_"));

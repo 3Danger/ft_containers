@@ -149,19 +149,20 @@ namespace ft
         //          const map<Key,T,Compare,Alloc>& rhs );
 		// template< class Key, class T, class Compare, class Alloc >
 		// void swap(map<Key,T,Compare,Alloc>& lhs,
-        //    map<Key,T,Compare,Alloc>& rhs );
-        
-        
-        
-        //* SECOND
-    // private:
+		//	map<Key,T,Compare,Alloc>& rhs );
+		
+		
+		
+		//* SECOND
+	// private:
 		struct Node
 		{
-			Node *_root;
-			Node *_rnode;
-			Node *_lnode;
+			size_t	_bDepth; // TODO реализовать черную глубну в рекурсии
+			Node *	_root;
+			Node *	_rnode;
+			Node *	_lnode;
 			value_type _value;
-			bool isBlack;
+			bool isBlack;	// TODO так же отметить цвета! RED BLACK
 			
 			Node()
 				:_root(NULL),
@@ -197,6 +198,8 @@ namespace ft
 		{
 			node[0] = _nodeAllocator.allocate(1);
 			_nodeAllocator.construct(*node, value, root);
+			if (not root)
+				node[0]->isBlack = true;
 		}
 	private:
 		
