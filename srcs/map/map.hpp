@@ -187,9 +187,9 @@ namespace ft
 			else if (value.first == node[0]->_value.first)
 				return false;
 			else if (_cmp(value.first, node[0]->_value.first))
-				return insert(value, &(node[0]->_rnode), *node);
-			else
 				return insert(value, &(node[0]->_lnode), *node);
+			else
+				return insert(value, &(node[0]->_rnode), *node);
 			return true;
 		}
 		

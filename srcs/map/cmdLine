@@ -1,0 +1,1 @@
+clear; clang++  ../ColourConsole.hpp -g -D_GLIBCXX_DEBUG Comparator.hpp pair.hpp Visualize.hpp map.hpp main.cpp && ./a.out

@@ -7,6 +7,9 @@
 
 #include "Visualize.hpp"
 
+#include <cmath>
+
+
 
 // #define FT
 // #ifndef FT
@@ -24,14 +27,18 @@ using namespace ft;
 int    main()
 {
     map<int, std::string> m;
+    std::srand(22);
+    for (int i = 0; i < 7; i++)
+    {
+        m.insert(pair<int, std::string>(std::rand() % 20, "_"));
+    }
     
-    m.insert(pair<int, std::string>(6, "are"));
-    m.insert(pair<int, std::string>(1, "hello"));
-    m.insert(pair<int, std::string>(7, "you"));
-    m.insert(pair<int, std::string>(3, "my"));
-    m.insert(pair<int, std::string>(4, "friend"));
-    m.insert(pair<int, std::string>(5, "how"));
-    m.insert(pair<int, std::string>(2, "world"));
+    // m.insert(pair<int, std::string>(3, "_"));
+    // m.insert(pair<int, std::string>(7, "_"));
+    // m.insert(pair<int, std::string>(4, "_"));
+    // m.insert(pair<int, std::string>(6, "_"));
+    // m.insert(pair<int, std::string>(1, "_"));
+    // m.insert(pair<int, std::string>(2, "_"));
     Visualize<int, std::string> v(m);
     v.run();
     
