@@ -105,7 +105,7 @@ public:
 		if (pos != posPrev)
 		{
 			std::swap(pos, posPrev);
-			return line.substr(pos, (posPrev - pos) - 2);
+			return line.substr(pos, (posPrev - pos) - 2) + " ";
 		}
 		posPrev = pos+2;
 		if (posB < posR)
