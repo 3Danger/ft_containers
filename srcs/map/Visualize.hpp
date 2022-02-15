@@ -41,7 +41,10 @@ public:
 	
 	    if (!tree) return 0;
 	
-	    sprintf(b, " %03d ", tree->_value.first);
+		if (tree->isBlack)
+	        sprintf(b, "%02dblk", tree->_value.first);
+	    else
+	        sprintf(b, "%02dred", tree->_value.first);
 	
 	    int left  = _print_t(tree->_lnode,  1, offset,                depth + 1, s);
 	    int right = _print_t(tree->_rnode, 0, offset + left + width, depth + 1, s);
@@ -54,16 +57,16 @@ public:
 	        for (int i = 0; i < width + right; i++)
 	            s[2 * depth - 1][offset + left + width/2 + i] = '-';
 	
-	        s[2 * depth - 1][offset + left + width/2] = '+';
-	        s[2 * depth - 1][offset + left + width + right + width/2] = '+';
+	        s[2 * depth - 1][offset + left + width/2] = '/';
+	        s[2 * depth - 1][offset + left + width + right + width/2] = '|';
 	
 	    } else if (depth && !is_left) {
 	
 	        for (int i = 0; i < left + width; i++)
 	            s[2 * depth - 1][offset - width/2 + i] = '-';
 	
-	        s[2 * depth - 1][offset + left + width/2] = '+';
-	        s[2 * depth - 1][offset - width/2 - 1] = '+';
+	        s[2 * depth - 1][offset + left + width/2] = '\\';
+	        s[2 * depth - 1][offset - width/2 - 1] = '|';
 	    }	
 	    return left + width + right;
 	}
@@ -79,13 +82,37 @@ public:
 	
 	    for (int i = 0; i < deep; i++)
 	    {
+	        std::string ss(s[i]);
+	        std::string::size_type pos = 0;
 	        if (i & 1)
-				std::cout << CC::getColor() << s[i] << CC::getColor() << std::endl;
+				std::cout << CC::getColor() << ss << CC::getColor() << std::endl;
 			else
-				std::cout << CC::getColor(CC::GREEN) << s[i] << CC::getColor(CC::RESET) << std::endl;
+			{
+				while(pos != ss.npos)
+					std::cout << getNext(ss, pos);
+				std::cout << std::endl;
+				// std::cout << CC::getColor(CC::GREEN) << s[i] << CC::getColor() << std::endl;
+			}
 		}
-	    // for (int i = 0; i < deep; i++)
-	    //     printf("%s\n", s[i]);
+	}
+	std::string getNext(std::string line, std::string::size_type & posPrev)
+	{
+		std::string::size_type pos;
+		std::string::size_type posB = line.find_first_of("blk", posPrev);
+		std::string::size_type posR = line.find_first_of("red", posPrev);
+		
+		pos = std::min(posB, posR);
+		if (pos != posPrev)
+		{
+			std::swap(pos, posPrev);
+			return line.substr(pos, (posPrev - pos) - 2);
+		}
+		posPrev = pos+2;
+		if (posB < posR)
+		{
+			return CC::getColor(CC::BLUE) + line.substr(pos-2, 2) + CC::getColor();
+		}
+		return CC::getColor(CC::RED) + line.substr(pos-2, 2) + CC::getColor();
 	}
 };
 

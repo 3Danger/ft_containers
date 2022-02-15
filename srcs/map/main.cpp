@@ -28,7 +28,7 @@ int    main()
 {
     map<int, std::string> m;
     std::srand(22);
-    for (int i = 0; i < 7; i++)
+    for (int i = 0; i < 10; i++)
     {
         m.insert(pair<int, std::string>(std::rand() % 20, "_"));
     }

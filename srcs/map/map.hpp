@@ -198,6 +198,8 @@ namespace ft
 			node[0] = _nodeAllocator.allocate(1);
 			_nodeAllocator.construct(*node, value, root);
 		}
+	private:
+		
 	}; // map
 } // namespace ft
 	
