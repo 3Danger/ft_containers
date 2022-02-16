@@ -1,0 +1,7 @@
+{
+	"files.associations": {
+		"unordered_map": "cpp",
+		"memory_resource": "cpp",
+		"*.tcc": "cpp"
+	}
+}

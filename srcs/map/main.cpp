@@ -25,12 +25,18 @@ using namespace ft;
 
 int    main()
 {
+    map<int, std::string>::Node * node;;
     map<int, std::string> m;
     std::srand(22);
-    for (int i = 0; i < 7; i++)
+    for (int i = 0; i < 10; i++)
     {
         m.insert(pair<int, std::string>(std::rand() % 20, "_"));
     }
+    node = m.findMaxDepthNode(m._node);
+    std::cout << node << std::endl;
+    
+    // std::cout << m.findMaxDepthNode(m._node)->_bDepth << std::endl;
+    
     // m.insert(pair<int, std::string>(3, "_"));
     // m.insert(pair<int, std::string>(7, "_"));
     // m.insert(pair<int, std::string>(4, "_"));

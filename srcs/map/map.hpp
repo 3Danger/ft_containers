@@ -95,6 +95,11 @@ namespace ft
 			return insert(value);
 		}
 		bool insert(const value_type &value){
+			if (not _node)
+			{
+				newNode(value, &_node, NULL);
+				return true;
+			}
 			return insert(value, &_node);
 		}
 		// pair<iterator, bool> insert(const value_type& value );
@@ -157,34 +162,37 @@ namespace ft
 	// private:
 		struct Node
 		{
-			size_t	_bDepth; // TODO реализовать черную глубну в рекурсии
-			Node *	_root;
+			size_t	_bDepth;
+			Node *	_parnt;
 			Node *	_rnode;
 			Node *	_lnode;
 			value_type _value;
-			bool isBlack;	// TODO так же отметить цвета! RED BLACK
+			bool isBlack = true;
 			
 			Node()
-				:_root(NULL),
-				_rnode(NULL),
-				_lnode(NULL),
-				_value(NULL) {}
-			Node(const value_type value, Node * root = NULL)
-				:_root(root),
-				_rnode(NULL),
-				_lnode(NULL),
-				_value(value) {}
+				:_parnt(NULL)
+				,_rnode(NULL)
+				,_lnode(NULL)
+				,_value(NULL) {}
+			Node(const value_type value, Node * parnt = NULL)
+				:_parnt(parnt)
+				,_rnode(NULL)
+				,_lnode(NULL)
+				,_value(value) {}
 			explicit Node(const Node &node)
-				:_root(node->root),
-				_rnode(node->_rnode),
-				_lnode(node->_lnode),
-				_value(node->_value) {}
+				:_parnt(node->_parnt)
+				,_rnode(node->_rnode)
+				,_lnode(node->_lnode)
+				,_value(node->_value) {}
 			~Node();
 		};  
     
-        bool insert(const value_type& value, Node ** node, Node * root = NULL){
+        bool insert(const value_type& value, Node ** node, Node * parent = NULL)
+        {
 			if (not *node)
-				newNode(value, node, root);
+			{
+				newNode(value, node, parent);
+			}
 			else if (value.first == node[0]->_value.first)
 				return false;
 			else if (_cmp(value.first, node[0]->_value.first))
@@ -194,12 +202,56 @@ namespace ft
 			return true;
 		}
 		
-		void newNode(const value_type& value, Node ** node, Node *root)
+		void newNode(const value_type& value, Node ** node, Node *parent)
 		{
 			node[0] = _nodeAllocator.allocate(1);
-			_nodeAllocator.construct(*node, value, root);
-			if (not root)
-				node[0]->isBlack = true;
+			_nodeAllocator.construct(*node, value, parent);
+			if (parent && parent->isBlack)
+				node[0]->isBlack = false;
+			node[0]->_bDepth = countBlack(*node);
+		}
+		
+		size_t countBlack(Node * node)
+		{
+			Node * tmp = node;
+			size_t counter;
+			for (counter = 0; tmp; tmp = tmp->_parnt)
+			{
+				if (tmp->isBlack)
+					counter++;
+			}
+			return counter;
+		}
+		
+		Node * findMaxDepthNode(Node * node, bool isMain = true)
+		{
+			Node * l = NULL;
+			Node * r = NULL;
+			if (node->_lnode)
+				l = findMaxDepthNode(node->_lnode, false);
+			if (node->_rnode)
+				r = findMaxDepthNode(node->_rnode, false);
+			if (not isMain)
+			{
+				if (not node->_lnode && not node->_rnode)
+					return node;
+				else if (l && not r)
+					return l;
+				else if (not l && r)
+					return r;
+				// else if ((not r && not l) || (l->_bDepth == r->_bDepth))
+				// 	return NULL;
+				return l->_bDepth > r->_bDepth ? l : r;
+			}
+			if (l && r)
+			{
+				if (l->_bDepth > r->_bDepth)
+					return l;
+				else if (l->_bDepth < r->_bDepth)
+					return r;
+				return NULL;
+			}
+			return l ? l : r;
 		}
 	private:
 		

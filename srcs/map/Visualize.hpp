@@ -110,7 +110,7 @@ public:
 		posPrev = pos+2;
 		if (posB < posR)
 		{
-			return CC::getColor(CC::BLACK, CC::BLUE) + line.substr(pos-2, 2) + CC::getColor();
+			return CC::getColor(CC::BLUE, CC::BLACK) + line.substr(pos-2, 2) + CC::getColor();
 		}
 		return CC::getColor(CC::RED) + line.substr(pos-2, 2) + CC::getColor();
 	}
