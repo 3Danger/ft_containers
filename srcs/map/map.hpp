@@ -210,6 +210,8 @@ namespace ft
 				*where = node;
 				node->_parent = parent;
 			}
+			else if (node->_value.first == where[0]->_value.first)
+				return ;
 			else if (_cmp(node->_value.first, where[0]->_value.first))
 				insert(&where[0]->_lnode, where[0], node);
 			else
@@ -236,53 +238,138 @@ namespace ft
 			{
 				node[0]->_count = parent->_count;
 			}
-			if (isDoubleRed(node[0]))
-			{
-				Node * bro = getBro(node[0]->_parent);
-				if (bro)
-					bro->isBlack = true;
-				if (node[0]->_parent)
-					node[0]->_parent->isBlack = true;
-				node[0]->_parent->_parent->isBlack = false;
-			}
-			else if (isSimpleDoubleRed(node[0]))
-			{
-				node[0]->_parent->_parent->isBlack = false;
-				node[0]->_parent->isBlack = true;
-				rotateNode(node[0]);
-			}
+			
+			for(Node * tmp = *node; tmp
+				&&(isRedRedBlackRedSimple(tmp)
+				|| isRedRedBlackRed(tmp)
+				|| isRedRedBlackBlack(tmp)
+				|| isRedRedBlackRedRoot(tmp)); tmp = tmp->_parent);
+			// if (isDoubleSimple(*node))
+			// 	std::cout << "isDoubleSimple(*node)" << std::endl;
+			
+			// else if ()
+				
+				
+			
+			
 				
 			
 			++sizeNodes;
-			if (node[0]->_value.first == 3)
-				std::cout << "tadaa" << std::endl;
 			// isBalanced(_node);
 			return true;
 			// node[0]->_count = countBlack(*node);
 		}
-
-		bool isSimpleDoubleRed(Node * node)
+		
+		bool isRedRedBlackBlack(Node * node)
 		{
-			if (node->_parent/* && not node->isBlack*/)
+			if (not node->isBlack && node->_parent && node->_parent->_parent)
 			{
-				if (not node->_parent->isBlack)
+				Node * parent = node->_parent;
+				if (not parent->isBlack && parent->_parent )
 				{
-					// Node * bro = getBro(node->_parent);
-					// if (bro && not bro->isBlack)
-					// {
-						return true;
-					// }
+					if (parent->_parent->isBlack)
+					{
+						Node *bro = getBro(parent);
+						if (not bro || bro->isBlack)
+						{
+							std::cout << "isRedRedBlackBlack" << std::endl;
+							parent->isBlack = true;
+							if (parent->_parent)
+								parent->_parent->isBlack = false;
+							// if (not (not bro && parent->_parent))
+								mainRotate(node);
+							return true;
+						}
+					}
+					
 				}
 			}
 			return false;
 		}
-		bool isDoubleRed(Node * node)
+		
+		bool isRedRedBlackRedRoot(Node * node)
 		{
-			if (node->_parent && not node->_parent->isBlack)
+			Node * parent = node->_parent;
+			Node * pparent = parent ? parent->_parent : NULL;
+			if (not node->isBlack && parent && pparent && not parent->isBlack)
 			{
-				Node * bro = getBro(node->_parent);
-				if (bro && not bro->isBlack)
+				if ((not pparent->_parent && pparent->isBlack))
 				{
+					Node * bro = getBro(parent);
+					if (bro && not bro->isBlack)
+					{
+						std::cout << "isRedRedBlackRedRoot" << std::endl;
+						bro->isBlack = true;
+						parent->isBlack = true;
+						node->isBlack = false;
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+		
+		bool isRedRedBlackRedSimple(Node * node)
+		{
+			Node * parent = node->_parent;
+			Node * pparent = parent ? parent->_parent : NULL;
+			if (not node->isBlack && parent && not parent->isBlack)
+			{
+				if (pparent/*->_parent*/ && pparent->isBlack)
+				{
+					Node * bro = getBro(node->_parent);
+					if (bro && not bro->isBlack && isNotChild(bro))
+					{
+						std::cout << "isRedRedBlackRed_Simple()" << std::endl;
+						parent->isBlack = true;
+						if (bro)
+							bro->isBlack = true;
+						node->isBlack = false;
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+		
+		bool isRedRedBlackRed(Node * node)
+		{
+			Node * parent = node->_parent;
+			Node * pparent = parent ? parent->_parent : NULL;
+			if (not node->isBlack && parent && not parent->isBlack)
+			{
+				if (pparent/*->_parent*/ && pparent->isBlack)
+				{
+					Node * bro = getBro(node->_parent);
+					if (bro && not bro->isBlack)
+					{
+						std::cout << "isRedRedBlackRed(tmp)" << std::endl;
+						pparent->isBlack = false;
+						if (bro)
+							bro->isBlack = true;
+						node->isBlack = true;
+						mainRotate(node);
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+		
+		bool isDoubleSimple(Node * node)
+		{
+			Node * parent = node->_parent;
+			if (not parent)
+				return false;
+			Node * pparent = parent->_parent;
+			if (parent && pparent && isOneChild(parent) && isOneChild(pparent))
+			{
+				Node * bro = getBro(parent);
+				if (not parent->isBlack && not node->isBlack && pparent->isBlack && (not bro || bro->isBlack))
+				{
+					parent->isBlack = true;
+					pparent->isBlack = false;
+					mainRotate(node);
 					return true;
 				}
 			}
@@ -333,18 +420,18 @@ namespace ft
 			return not node->_parent->isBlack;
 		}
 		
-		bool isBalanced(Node * node)
-		{
+		// bool isBalanced(Node * node)
+		// {
 				
-			if (not node)
-				return true;
-			Node * findMax = maxCount(node);
-			if (findMax && findMax->_count < 2)
-				return true;
-			if (findMax && findMax != node)
-				rotateNode(findMax);
-			return true; // TODO изменить!
-		}
+		// 	if (not node)
+		// 		return true;
+		// 	Node * findMax = maxCount(node);
+		// 	if (findMax && findMax->_count < 2)
+		// 		return true;
+		// 	if (findMax && findMax != node)
+		// 		mainRotate(findMax);
+		// 	return true; // TODO изменить!
+		// }
 
 		Node ** getParentConnect(Node * node)
 		{
@@ -366,25 +453,118 @@ namespace ft
 		void setParentFrom(Node * node, Node * from)
 		{
 			node->_parent = NULL;
-			if (not from->_parent)
+			if (not from || not from->_parent)
 				return ;
 			node->_parent = from->_parent;
 			Node ** fromConnect = getParentConnect(node);
 			if (fromConnect)
 				*fromConnect = node;
 		}
-			
-		void rotateNode(Node * three)
+		
+		void mainRotate(Node * node)
 		{
+			
+			if (node && node->_parent && node->_parent->_parent)
+			{
+				if (detectTypeMicroPattern(node))
+					rotateNodeSlash(node);
+				else
+				{
+					rotateNodeAngle(node);
+					
+				}
+			}
+		}
+		
+		/**
+		 * @brief detecting type, angle or slash microPattern
+		 * 
+		 * @param node 
+		 * @return true if slash
+		 * @return false is angle
+		 */
+		bool detectTypeMicroPattern(Node * node)
+		{
+			Node * three, *two, *one;
+			three = node;
+			two = node->_parent;
+			one = two->_parent;
+			if (one->_value.first < three->_value.first)
+			{
+				if (three->_value.first > two->_value.first)
+					return true;
+				else
+					return false;
+			}
+			else
+			{
+				if (three->_value.first < two->_value.first)
+					return true;
+				else
+					return false;
+			}
+		}
+		
+		
+			
+		void rotateNodeSlash(Node * three)
+		{
+			std::cout << "rotateNodeSlash(Node* three)" << std::endl;
+			
 			Node * two = three->_parent;
 			Node * one = two->_parent;
 			breakParent(two);
 			setParentFrom(two, one);
-			insert(&two, two, one);
+			if (one)
+				insert(&two, two, one);
 			if (not two->_parent)
 				_node = two;
 			// updateMark(_node, true);
 			// updateMark(two, one ? one->isBlack : true);
+		}
+		
+		//TODO !!!!!!!!!
+		void rotateNodeAngle(Node * three)
+		{
+			std::cout << "rotateNodeAngle(Node * three)" << std::endl;
+			
+			Node * two = three->_parent;
+			Node * one = two->_parent;
+			Node * zero = one->_parent;
+			
+			breakConnectToParrent(two);
+			breakConnectToParrent(three);
+			if (zero)
+			{
+				*getConnect(one) = three;
+				three->_parent = zero;
+				// insert(&zero, zero, three);
+			}
+			insert(&three, three, two);
+			insert(&three, three, one);
+			if (not one->_parent->isBlack)
+				one->isBlack = true;
+		}
+		
+		void breakConnectToParrent(Node * node)
+		{
+			if (not node || not node->_parent)
+				return ;
+			*getConnect(node) = NULL;
+			node->_parent = NULL;
+		
+		}
+		
+		Node ** getConnect(Node * node)
+		{
+			Node * parent = node->_parent;
+			if (parent)
+			{
+				if (parent->_lnode == node)
+					return &parent->_lnode;
+				return &parent->_rnode;
+			}
+			return NULL;
 		}
 		
 		Node * maxCount(Node * node)

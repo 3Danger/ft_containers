@@ -36,7 +36,7 @@ public:
 		return (std::max(recDepth(node->_lnode, s), recDepth(node->_rnode, s)));
 	}
 
-	int _print_t(node_t *tree, int is_left, int offset, int depth, char s[20][255])
+	int _print_t(node_t *tree, int is_left, int offset, int depth, char s[64][255])
 	{
 	    char b[deep];
 	    int width = 5;
