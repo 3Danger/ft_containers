@@ -1,6 +1,6 @@
 #pragma once
 
-#include "map.hpp"
+// #include "map.hpp"
 #include <string>
 #include <sstream>
 
@@ -12,18 +12,20 @@
 #include "../ColourConsole.hpp"
 
 
-template <class Key, class T >
+template <class node_t>
 class Visualize{
 public:
-	typedef ft::map<Key, T> map_t;
-	typedef typename map_t::Node node_t;
 	node_t * _node;
 	size_t deep = 0;
 	std::stringstream str;
-	Visualize(map_t & m): _node(m._node)
+	Visualize(node_t * m): _node(m)
 	{
-		deep = recDepth(_node) + 4;
+		deep = recDepth(_node) + 8;
 	}
+	// Visualize(map_t & m): _node(m._node)
+	// {
+	// 	deep = recDepth(_node) + 4;
+	// }
 
 
 	size_t recDepth(node_t * node, size_t s = 0)
@@ -71,9 +73,10 @@ public:
 	    return left + width + right;
 	}
 	
-	void run(size_t _deep = 10)
+	void run(node_t * node = NULL)
 	{
-		node_t *tree = _node;
+		
+		node_t *tree = node ? node : _node;
 	    char s[deep][255];
 	    for (int i = 0; i < deep; i++)
 	        sprintf(s[i], "%80s", " ");

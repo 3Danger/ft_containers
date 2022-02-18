@@ -162,96 +162,277 @@ namespace ft
 	// private:
 		struct Node
 		{
-			size_t	_bDepth;
-			Node *	_parnt;
+			size_t	_count;
+			value_type _value;
+			bool isBlack = false;
 			Node *	_rnode;
 			Node *	_lnode;
-			value_type _value;
-			bool isBlack = true;
+			Node *	_parent;
 			
 			Node()
-				:_parnt(NULL)
+				:_count(0)
+				,_value(NULL)
 				,_rnode(NULL)
 				,_lnode(NULL)
-				,_value(NULL) {}
+				,_parent(NULL){}
 			Node(const value_type value, Node * parnt = NULL)
-				:_parnt(parnt)
+				:_count(0)
+				,_value(value)
 				,_rnode(NULL)
 				,_lnode(NULL)
-				,_value(value) {}
+				,_parent(parnt){}
 			explicit Node(const Node &node)
-				:_parnt(node->_parnt)
+				:_count(node->_count)
+				,_value(node->_value)
 				,_rnode(node->_rnode)
 				,_lnode(node->_lnode)
-				,_value(node->_value) {}
+				,_parent(node->_parent){}
 			~Node();
 		};  
     
         bool insert(const value_type& value, Node ** node, Node * parent = NULL)
         {
 			if (not *node)
-			{
-				newNode(value, node, parent);
-			}
+				return newNode(value, node, parent);
 			else if (value.first == node[0]->_value.first)
 				return false;
 			else if (_cmp(value.first, node[0]->_value.first))
 				return insert(value, &(node[0]->_lnode), *node);
 			else
 				return insert(value, &(node[0]->_rnode), *node);
-			return true;
 		}
 		
-		void newNode(const value_type& value, Node ** node, Node *parent)
+		void insert(Node ** where, Node * parent, Node * node)
+		{
+			//TODO remark color and recount black nodes
+			if (not *where)
+			{
+				*where = node;
+				node->_parent = parent;
+			}
+			else if (_cmp(node->_value.first, where[0]->_value.first))
+				insert(&where[0]->_lnode, where[0], node);
+			else
+				insert(&where[0]->_rnode, where[0], node);
+				
+		}
+		
+		
+		bool newNode(const value_type& value, Node ** node, Node *parent)
 		{
 			node[0] = _nodeAllocator.allocate(1);
 			_nodeAllocator.construct(*node, value, parent);
-			if (parent && parent->isBlack)
-				node[0]->isBlack = false;
-			node[0]->_bDepth = countBlack(*node);
+			if (not parent)
+			{
+				node[0]->_count = 1;
+				node[0]->isBlack = true;
+			}
+			// TODO this balance red black
+			else if (not parent->isBlack)
+			{
+				node[0]->_count = parent->_count + 1;
+			}
+			else
+			{
+				node[0]->_count = parent->_count;
+			}
+			if (isDoubleRed(node[0]))
+			{
+				Node * bro = getBro(node[0]->_parent);
+				if (bro)
+					bro->isBlack = true;
+				if (node[0]->_parent)
+					node[0]->_parent->isBlack = true;
+				node[0]->_parent->_parent->isBlack = false;
+			}
+			else if (isSimpleDoubleRed(node[0]))
+			{
+				node[0]->_parent->_parent->isBlack = false;
+				node[0]->_parent->isBlack = true;
+				rotateNode(node[0]);
+			}
+				
+			
+			++sizeNodes;
+			if (node[0]->_value.first == 3)
+				std::cout << "tadaa" << std::endl;
+			// isBalanced(_node);
+			return true;
+			// node[0]->_count = countBlack(*node);
+		}
+
+		bool isSimpleDoubleRed(Node * node)
+		{
+			if (node->_parent/* && not node->isBlack*/)
+			{
+				if (not node->_parent->isBlack)
+				{
+					// Node * bro = getBro(node->_parent);
+					// if (bro && not bro->isBlack)
+					// {
+						return true;
+					// }
+				}
+			}
+			return false;
+		}
+		bool isDoubleRed(Node * node)
+		{
+			if (node->_parent && not node->_parent->isBlack)
+			{
+				Node * bro = getBro(node->_parent);
+				if (bro && not bro->isBlack)
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+		
+		bool isNotChild(Node * node)
+		{
+			return not node->_lnode && not node->_rnode;
+		}
+		
+		bool isHaveChild(Node * node)
+		{
+			return node->_lnode || node->_rnode;
+		}
+
+		bool isOneChild(Node * node)
+		{
+			if (not node->_lnode && node->_rnode)
+				return true;
+			if (node->_lnode && not node->_rnode)
+				return true;
+			return false;
+		}
+		
+		Node * getBro(Node * node)
+		{
+			if (node && node->_parent)
+				return (node == node->_parent->_lnode ? node->_parent->_rnode : node->_parent->_lnode);
+			return NULL;
+		}
+		
+		Node * isOneHandSameParent(Node * node)
+		{
+			while(node->_parent)
+			{
+				node = node->_parent;
+				if (not node->_lnode || not node->_rnode)
+					return node;
+			}
+			return NULL;
+		}
+		
+		bool isBackRed(Node * node)
+		{
+			if (not node->_parent)
+				return true;
+			return not node->_parent->isBlack;
+		}
+		
+		bool isBalanced(Node * node)
+		{
+				
+			if (not node)
+				return true;
+			Node * findMax = maxCount(node);
+			if (findMax && findMax->_count < 2)
+				return true;
+			if (findMax && findMax != node)
+				rotateNode(findMax);
+			return true; // TODO изменить!
+		}
+
+		Node ** getParentConnect(Node * node)
+		{
+			if (not node->_parent)
+				return NULL;
+			if (node == node->_parent->_lnode)
+				return &node->_parent->_lnode;
+			return &node->_parent->_rnode;
+		}
+		
+		void breakParent(Node * node)
+		{
+			Node ** oneConnect = getParentConnect(node);
+			if (oneConnect)
+				*oneConnect = NULL;
+			node->_parent = NULL;		
+		}
+		
+		void setParentFrom(Node * node, Node * from)
+		{
+			node->_parent = NULL;
+			if (not from->_parent)
+				return ;
+			node->_parent = from->_parent;
+			Node ** fromConnect = getParentConnect(node);
+			if (fromConnect)
+				*fromConnect = node;
+		}
+			
+		void rotateNode(Node * three)
+		{
+			Node * two = three->_parent;
+			Node * one = two->_parent;
+			breakParent(two);
+			setParentFrom(two, one);
+			insert(&two, two, one);
+			if (not two->_parent)
+				_node = two;
+			// updateMark(_node, true);
+			// updateMark(two, one ? one->isBlack : true);
+		}
+		
+		Node * maxCount(Node * node)
+		{
+			Node *l = NULL, *r = NULL;
+			if(node->_lnode)
+				l = maxCount(node->_lnode);
+			if(node->_rnode)
+				r = maxCount(node->_rnode);
+			if ((r && not l) || (r && l && r->_count > l->_count))
+				return r;
+			else if ((not r && l) || (r && l && r->_count < l->_count))
+				return l;
+			if (l && r && l->_count == r->_count)
+				return NULL;
+			return node;
+		}
+		
+		void updateMark(Node * node, bool isBlackColor = true)
+		{
+			node->isBlack = isBlackColor;
+			isBlackColor = !isBlackColor;
+			if (node->_lnode)
+				updateMark(node->_lnode, isBlackColor);
+			if (node->_rnode)
+				updateMark(node->_rnode, isBlackColor);
+			if (node->_lnode || node->_rnode)
+			{
+				if (not node->isBlack)
+					node->_count = (node->_lnode ? node->_lnode->_count : node->_rnode->_count) - 1;
+				else
+					node->_count = (node->_lnode ? node->_lnode->_count : node->_rnode->_count);
+			}
+			else
+				node->_count = countBlack(node);
+				
 		}
 		
 		size_t countBlack(Node * node)
 		{
 			Node * tmp = node;
 			size_t counter;
-			for (counter = 0; tmp; tmp = tmp->_parnt)
+			for (counter = 0; tmp; tmp = tmp->_parent)
 			{
 				if (tmp->isBlack)
 					counter++;
 			}
 			return counter;
-		}
-		
-		Node * findMaxDepthNode(Node * node, bool isMain = true)
-		{
-			Node * l = NULL;
-			Node * r = NULL;
-			if (node->_lnode)
-				l = findMaxDepthNode(node->_lnode, false);
-			if (node->_rnode)
-				r = findMaxDepthNode(node->_rnode, false);
-			if (not isMain)
-			{
-				if (not node->_lnode && not node->_rnode)
-					return node;
-				else if (l && not r)
-					return l;
-				else if (not l && r)
-					return r;
-				// else if ((not r && not l) || (l->_bDepth == r->_bDepth))
-				// 	return NULL;
-				return l->_bDepth > r->_bDepth ? l : r;
-			}
-			if (l && r)
-			{
-				if (l->_bDepth > r->_bDepth)
-					return l;
-				else if (l->_bDepth < r->_bDepth)
-					return r;
-				return NULL;
-			}
-			return l ? l : r;
 		}
 	private:
 		
