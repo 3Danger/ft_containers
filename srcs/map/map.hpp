@@ -95,6 +95,7 @@ namespace ft
 			return insert(value);
 		}
 		bool insert(const value_type &value){
+			// std::cout << "inserted " << value.first << std::endl;
 			if (not _node)
 			{
 				newNode(value, &_node, NULL);
@@ -222,340 +223,237 @@ namespace ft
 		
 		bool newNode(const value_type& value, Node ** node, Node *parent)
 		{
+			++sizeNodes;
 			node[0] = _nodeAllocator.allocate(1);
 			_nodeAllocator.construct(*node, value, parent);
-			if (not parent)
-			{
-				node[0]->_count = 1;
-				node[0]->isBlack = true;
-			}
 			// TODO this balance red black
-			else if (not parent->isBlack)
-			{
-				node[0]->_count = parent->_count + 1;
-			}
-			else
-			{
-				node[0]->_count = parent->_count;
-			}
-			
-			for(Node * tmp = *node; tmp
-				&&(isRedRedBlackRedSimple(tmp)
-				|| isRedRedBlackRed(tmp)
-				|| isRedRedBlackBlack(tmp)
-				|| isRedRedBlackRedRoot(tmp)); tmp = tmp->_parent);
-			// if (isDoubleSimple(*node))
-			// 	std::cout << "isDoubleSimple(*node)" << std::endl;
-			
-			// else if ()
-				
-				
-			
-			
-				
-			
-			++sizeNodes;
-			// isBalanced(_node);
+			Node * tmp = *node;
+			// while(tmp)
+			// {
+				case_1(tmp);
+			// 	tmp = tmp->_parent;
+			// }
 			return true;
 			// node[0]->_count = countBlack(*node);
 		}
 		
-		bool isRedRedBlackBlack(Node * node)
+		void case_1(Node *node)
 		{
-			if (not node->isBlack && node->_parent && node->_parent->_parent)
-			{
-				Node * parent = node->_parent;
-				if (not parent->isBlack && parent->_parent )
-				{
-					if (parent->_parent->isBlack)
-					{
-						Node *bro = getBro(parent);
-						if (not bro || bro->isBlack)
-						{
-							std::cout << "isRedRedBlackBlack" << std::endl;
-							parent->isBlack = true;
-							if (parent->_parent)
-								parent->_parent->isBlack = false;
-							// if (not (not bro && parent->_parent))
-								mainRotate(node);
-							return true;
-						}
-					}
-					
-				}
+			if (node->_parent)
+				case_2(node);
+			else
+				node->isBlack = true;
+		}
+		
+		void case_2(Node *node)
+		{
+			if (node->_parent->isBlack)
+				return; /* Tree is still valid */
+			else
+				case_3(node);
+		}
+		
+		void case_3(Node *node)
+		{
+			Node *brother = getBrother(node), *p_parent;
+		
+			if (brother && not brother->isBlack) {
+			// && (node->parent->color == RED) Второе условие проверяется в case_2, то есть родитель уже является красным.
+				node->_parent->isBlack = true;
+				brother->isBlack = true;
+				p_parent = node->_parent->_parent;
+				p_parent->isBlack = false;
+				case_1(p_parent);
+			} else {
+				case_4(node);
 			}
-			return false;
 		}
 		
-		bool isRedRedBlackRedRoot(Node * node)
+		void case_4(Node *node)
 		{
-			Node * parent = node->_parent;
-			Node * pparent = parent ? parent->_parent : NULL;
-			if (not node->isBlack && parent && pparent && not parent->isBlack)
-			{
-				if ((not pparent->_parent && pparent->isBlack))
-				{
-					Node * bro = getBro(parent);
-					if (bro && not bro->isBlack)
-					{
-						std::cout << "isRedRedBlackRedRoot" << std::endl;
-						bro->isBlack = true;
-						parent->isBlack = true;
-						node->isBlack = false;
-						return true;
-					}
-				}
+			Node *g = grandparent(node);
+		
+			if ((node == node->_parent->_rnode) && (node->_parent == g->_lnode)) {
+				rotate_left(node->_parent);
+		
+				/*
+				 * rotate_left может быть выполнен следующим образом, учитывая что уже есть *g =  grandparent(node) 
+				 *
+				 * Node *saved_p=g->_lnode, *saved_left_n=node->_lnode;
+				 * g->_lnode=node; 
+				 * node->_lnode=saved_p;
+				 * saved_p->_rnode=saved_left_n;
+				 * 
+				 */
+		
+				node = node->_lnode;
+			} else if ((node == node->_parent->_lnode) && (node->_parent == g->_rnode)) {
+				rotate_right(node->_parent);
+		
+				/*
+				 * rotate_right может быть выполнен следующим образом, учитывая что уже есть *g =  grandparent(node) 
+				 *
+				 * Node *saved_p=g->_rnode, *saved_right_n=node->_rnode;
+				 * g->_rnode=node; 
+				 * node->_rnode=saved_p;
+				 * saved_p->_lnode=saved_right_n;
+				 * 
+				 */
+		
+				node = node->_rnode;
 			}
-			return false;
+			case_5(node);
 		}
 		
-		bool isRedRedBlackRedSimple(Node * node)
+		void case_5(Node *node)
 		{
-			Node * parent = node->_parent;
-			Node * pparent = parent ? parent->_parent : NULL;
-			if (not node->isBlack && parent && not parent->isBlack)
-			{
-				if (pparent/*->_parent*/ && pparent->isBlack)
-				{
-					Node * bro = getBro(node->_parent);
-					if (bro && not bro->isBlack && isNotChild(bro))
-					{
-						std::cout << "isRedRedBlackRed_Simple()" << std::endl;
-						parent->isBlack = true;
-						if (bro)
-							bro->isBlack = true;
-						node->isBlack = false;
-						return true;
-					}
-				}
+			Node *p_parent = node->_parent->_parent;
+		
+			node->_parent->isBlack = true;
+			p_parent->isBlack = false;
+			if ((node == node->_parent->_lnode) && (node->_parent == p_parent->_lnode)) {
+				rotate_right(p_parent);
+			} else { /* (node == node->_parent->_rnode) && (node->_parent == p_parent->_rnode) */
+				rotate_left(p_parent);
 			}
-			return false;
 		}
 		
-		bool isRedRedBlackRed(Node * node)
-		{
-			Node * parent = node->_parent;
-			Node * pparent = parent ? parent->_parent : NULL;
-			if (not node->isBlack && parent && not parent->isBlack)
-			{
-				if (pparent/*->_parent*/ && pparent->isBlack)
-				{
-					Node * bro = getBro(node->_parent);
-					if (bro && not bro->isBlack)
-					{
-						std::cout << "isRedRedBlackRed(tmp)" << std::endl;
-						pparent->isBlack = false;
-						if (bro)
-							bro->isBlack = true;
-						node->isBlack = true;
-						mainRotate(node);
-						return true;
-					}
-				}
-			}
-			return false;
-		}
-		
-		bool isDoubleSimple(Node * node)
-		{
-			Node * parent = node->_parent;
-			if (not parent)
-				return false;
-			Node * pparent = parent->_parent;
-			if (parent && pparent && isOneChild(parent) && isOneChild(pparent))
-			{
-				Node * bro = getBro(parent);
-				if (not parent->isBlack && not node->isBlack && pparent->isBlack && (not bro || bro->isBlack))
-				{
-					parent->isBlack = true;
-					pparent->isBlack = false;
-					mainRotate(node);
-					return true;
-				}
-			}
-			return false;
-		}
-		
-		bool isNotChild(Node * node)
-		{
-			return not node->_lnode && not node->_rnode;
-		}
-		
-		bool isHaveChild(Node * node)
-		{
-			return node->_lnode || node->_rnode;
-		}
-
-		bool isOneChild(Node * node)
-		{
-			if (not node->_lnode && node->_rnode)
-				return true;
-			if (node->_lnode && not node->_rnode)
-				return true;
-			return false;
-		}
-		
-		Node * getBro(Node * node)
+		Node * grandparent(Node * node)
 		{
 			if (node && node->_parent)
-				return (node == node->_parent->_lnode ? node->_parent->_rnode : node->_parent->_lnode);
-			return NULL;
-		}
-		
-		Node * isOneHandSameParent(Node * node)
-		{
-			while(node->_parent)
-			{
-				node = node->_parent;
-				if (not node->_lnode || not node->_rnode)
-					return node;
-			}
-			return NULL;
-		}
-		
-		bool isBackRed(Node * node)
-		{
-			if (not node->_parent)
-				return true;
-			return not node->_parent->isBlack;
-		}
-		
-		// bool isBalanced(Node * node)
-		// {
-				
-		// 	if (not node)
-		// 		return true;
-		// 	Node * findMax = maxCount(node);
-		// 	if (findMax && findMax->_count < 2)
-		// 		return true;
-		// 	if (findMax && findMax != node)
-		// 		mainRotate(findMax);
-		// 	return true; // TODO изменить!
-		// }
-
-		Node ** getParentConnect(Node * node)
-		{
-			if (not node->_parent)
-				return NULL;
-			if (node == node->_parent->_lnode)
-				return &node->_parent->_lnode;
-			return &node->_parent->_rnode;
-		}
-		
-		void breakParent(Node * node)
-		{
-			Node ** oneConnect = getParentConnect(node);
-			if (oneConnect)
-				*oneConnect = NULL;
-			node->_parent = NULL;		
-		}
-		
-		void setParentFrom(Node * node, Node * from)
-		{
-			node->_parent = NULL;
-			if (not from || not from->_parent)
-				return ;
-			node->_parent = from->_parent;
-			Node ** fromConnect = getParentConnect(node);
-			if (fromConnect)
-				*fromConnect = node;
-		}
-		
-		void mainRotate(Node * node)
-		{
-			
-			if (node && node->_parent && node->_parent->_parent)
-			{
-				if (detectTypeMicroPattern(node))
-					rotateNodeSlash(node);
-				else
-				{
-					rotateNodeAngle(node);
-					
-				}
-			}
-		}
-		
-		/**
-		 * @brief detecting type, angle or slash microPattern
-		 * 
-		 * @param node 
-		 * @return true if slash
-		 * @return false is angle
-		 */
-		bool detectTypeMicroPattern(Node * node)
-		{
-			Node * three, *two, *one;
-			three = node;
-			two = node->_parent;
-			one = two->_parent;
-			if (one->_value.first < three->_value.first)
-			{
-				if (three->_value.first > two->_value.first)
-					return true;
-				else
-					return false;
-			}
+				return node->_parent->_parent;
 			else
-			{
-				if (three->_value.first < two->_value.first)
-					return true;
-				else
-					return false;
-			}
+				return NULL;
 		}
 		
-		
-			
-		void rotateNodeSlash(Node * three)
+		void
+		rotate_left(Node *n)
 		{
-			std::cout << "rotateNodeSlash(Node* three)" << std::endl;
+		    Node *pivot = n->_rnode;
 			
-			Node * two = three->_parent;
-			Node * one = two->_parent;
-			breakParent(two);
-			setParentFrom(two, one);
-			if (one)
-				insert(&two, two, one);
-			if (not two->_parent)
-				_node = two;
-			// updateMark(_node, true);
-			// updateMark(two, one ? one->isBlack : true);
+		    pivot->_parent = n->_parent; /* при этом, возможно, pivot становится корнем дерева */
+		    if (n->_parent) {
+		        if (n->_parent->_lnode==n)
+		            n->_parent->_lnode = pivot;
+		        else
+		            n->_parent->_rnode = pivot;
+		    }		
+			
+		    n->_rnode = pivot->_lnode;
+		    if (pivot->_lnode)
+		        pivot->_lnode->_parent = n;
+		
+		    n->_parent = pivot;
+		    pivot->_lnode = n;
+		    if (not pivot->_parent)
+		        _node = pivot;
 		}
 		
-		//TODO !!!!!!!!!
-		void rotateNodeAngle(Node * three)
+		void
+		rotate_right(Node *n)
 		{
-			std::cout << "rotateNodeAngle(Node * three)" << std::endl;
+		    Node *pivot = n->_lnode;
 			
-			Node * two = three->_parent;
-			Node * one = two->_parent;
-			Node * zero = one->_parent;
+		    pivot->_parent = n->_parent; /* при этом, возможно, pivot становится корнем дерева */
+		    if (n->_parent) {
+		        if (n->_parent->_lnode==n)
+		            n->_parent->_lnode = pivot;
+		        else
+		            n->_parent->_rnode = pivot;
+		    }		
 			
-			breakConnectToParrent(two);
-			breakConnectToParrent(three);
-			if (zero)
-			{
-				*getConnect(one) = three;
-				three->_parent = zero;
-				// insert(&zero, zero, three);
-			}
-			insert(&three, three, two);
-			insert(&three, three, one);
-			if (not one->_parent->isBlack)
-				one->isBlack = true;
+		    n->_lnode = pivot->_rnode;
+		    if (pivot->_rnode)
+		        pivot->_rnode->_parent = n;
+		
+		    n->_parent = pivot;
+		    pivot->_rnode = n;
+		    if (not pivot->_parent)
+		        _node = pivot;
 		}
 		
-		void breakConnectToParrent(Node * node)
+		Node * getBrother(Node *n)
 		{
-			if (not node || not node->_parent)
-				return ;
-			*getConnect(node) = NULL;
-			node->_parent = NULL;
-		
+			Node * g = grandparent(n);
+			if (g == NULL)
+				return NULL; // No grandparent means no uncle
+			if (n->_parent == g->_lnode)
+				return g->_rnode;
+			else
+				return g->_lnode;
 		}
+
 		
-		Node ** getConnect(Node * node)
+		// /**
+		//  * @brief detecting type, angle or slash microPattern
+		//  * 
+		//  * @param node 
+		//  * @return true if slash
+		//  * @return false is angle
+		//  */
+		// bool detectTypeMicroPattern(Node * node)
+		// {
+		// 	Node * three, *two, *one;
+		// 	three = node;
+		// 	two = node->_parent;
+		// 	one = two->_parent;
+		// 	if (one->_value.first < three->_value.first)
+		// 	{
+		// 		if (three->_value.first > two->_value.first)
+		// 			return true;
+		// 		else
+		// 			return false;
+		// 	}
+		// 	else
+		// 	{
+		// 		if (three->_value.first < two->_value.first)
+		// 			return true;
+		// 		else
+		// 			return false;
+		// 	}
+		// }
+		
+		
+			
+		// void rotateNodeSlash(Node * three)
+		// {
+		// 	std::cout << "rotateNodeSlash(Node* three)" << std::endl;
+			
+		// 	Node * two = three->_parent;
+		// 	Node * one = two->_parent;
+		// 	breakParent(two);
+		// 	setParentFrom(two, one);
+		// 	if (one)
+		// 		insert(&two, two, one);
+		// 	if (not two->_parent)
+		// 		_node = two;
+		// 	// updateMark(_node, true);
+		// 	// updateMark(two, one ? one->isBlack : true);
+		// }
+		
+		// //TODO !!!!!!!!!
+		// void rotateNodeAngle(Node * three)
+		// {
+		// 	std::cout << "rotateNodeAngle(Node * three)" << std::endl;
+			
+		// 	Node * two = three->_parent;
+		// 	Node * one = two->_parent;
+		// 	Node * zero = one->_parent;
+			
+		// 	// breakParent(two);
+		// 	breakParent(three);
+		// 	breakParent(two);
+		// 	Node ** connectOfOne = getConnectFromParent(one);
+		// 	if (connectOfOne)
+		// 		*connectOfOne = three;
+		// 	else
+		// 		_node = three;
+		// 	three->_parent = zero;
+		// 	insert(&three, three, one);
+		// 	insert(&three, three, two);
+		// }
+		
+		Node ** getConnectFromParent(Node * node)
 		{
 			Node * parent = node->_parent;
 			if (parent)
@@ -581,38 +479,6 @@ namespace ft
 			if (l && r && l->_count == r->_count)
 				return NULL;
 			return node;
-		}
-		
-		void updateMark(Node * node, bool isBlackColor = true)
-		{
-			node->isBlack = isBlackColor;
-			isBlackColor = !isBlackColor;
-			if (node->_lnode)
-				updateMark(node->_lnode, isBlackColor);
-			if (node->_rnode)
-				updateMark(node->_rnode, isBlackColor);
-			if (node->_lnode || node->_rnode)
-			{
-				if (not node->isBlack)
-					node->_count = (node->_lnode ? node->_lnode->_count : node->_rnode->_count) - 1;
-				else
-					node->_count = (node->_lnode ? node->_lnode->_count : node->_rnode->_count);
-			}
-			else
-				node->_count = countBlack(node);
-				
-		}
-		
-		size_t countBlack(Node * node)
-		{
-			Node * tmp = node;
-			size_t counter;
-			for (counter = 0; tmp; tmp = tmp->_parent)
-			{
-				if (tmp->isBlack)
-					counter++;
-			}
-			return counter;
 		}
 	private:
 		

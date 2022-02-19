@@ -30,60 +30,18 @@ std::ostream& operator<<(std::ostream &os, map<int, std::string>::Node const * n
 	return os;
 }
 
-size_t count(map<int, std::string>::Node * node)
-{
-	size_t res = 0;
-	if (not node->_lnode && not node->_rnode)
-		res = 1;
-	else if (node->_lnode || (node->_rnode))
-	{
-		if (node->_lnode)
-			res += count(node->_lnode);
-		if (node->_rnode)
-			res += count(node->_rnode);
-	}
-	
-	return res;
-}
-
-
-// #define CONSOLE
-
 int    main()
 {
 	map<int, std::string>::Node * node;
 	map<int, std::string> m;
 	std::srand(22);
+	for (int i = 0; i < 40; i++)
+	{
+		m.insert(pair<int, std::string>(i, "_"));	
+	}
 	Visualize<map<int, std::string>::Node > v(m._node);
-	std::cout << "inserted 10" << std::endl;
-	m.insert(pair<int, std::string>(10, "_"));
 	v.run(m._node);
-	std::cout << "inserted 42" << std::endl;
-	m.insert(pair<int, std::string>(42, "_"));
-	v.run(m._node);
-	std::cout << "inserted 64" << std::endl;
-	m.insert(pair<int, std::string>(64, "_"));
-	v.run(m._node);
-	std::cout << "inserted 31" << std::endl;
-	m.insert(pair<int, std::string>(31, "_"));
-	v.run(m._node);
-	std::cout << "inserted 29" << std::endl;
-	m.insert(pair<int, std::string>(29, "_"));
-	v.run(m._node);
-	std::cout << "inserted 83" << std::endl;
-	m.insert(pair<int, std::string>(83, "_"));
-	v.run(m._node);
-	std::cout << "inserted 50" << std::endl;
-	m.insert(pair<int, std::string>(50, "_"));
-	v.run(m._node);
-	std::cout << "inserted 7" << std::endl;
-	m.insert(pair<int, std::string>(7, "_"));
-	v.run(m._node);
-	std::cout << "inserted 5" << std::endl;
-	m.insert(pair<int, std::string>(5, "_"));
-	std::cout << count(m._node) << std::endl;
 	
-	v.run(m._node);
 	// m.insert(pair<int, std::string>(11, "_"));
 	// m.insert(pair<int, std::string>(7, "_"));
 	// m.insert(pair<int, std::string>(15, "_"));

@@ -36,17 +36,17 @@ public:
 		return (std::max(recDepth(node->_lnode, s), recDepth(node->_rnode, s)));
 	}
 
-	int _print_t(node_t *tree, int is_left, int offset, int depth, char s[64][255])
+	int _print_t(node_t *tree, int is_left, int offset, int depth, char s[64<<2][255<<2])
 	{
 	    char b[deep];
-	    int width = 5;
+	    int width = 3;
 	
 	    if (!tree) return 0;
 	
 		if (tree->isBlack)
-	        sprintf(b, "%02dblk", tree->_value.first);
+	        sprintf(b, "%02db", tree->_value.first);
 	    else
-	        sprintf(b, "%02dred", tree->_value.first);
+	        sprintf(b, "%02dr", tree->_value.first);
 	
 	    int left  = _print_t(tree->_lnode,  1, offset,                depth + 1, s);
 	    int right = _print_t(tree->_rnode, 0, offset + left + width, depth + 1, s);
@@ -77,7 +77,7 @@ public:
 	{
 		
 		node_t *tree = node ? node : _node;
-	    char s[deep][255];
+	    char s[deep][255<<2];
 	    for (int i = 0; i < deep; i++)
 	        sprintf(s[i], "%80s", " ");
 	
@@ -105,6 +105,11 @@ public:
 		std::string::size_type posR = line.find_first_of("red", posPrev);
 		
 		pos = std::min(posB, posR);
+		if (pos == line.npos)
+		{
+			posPrev = pos;
+			return "";
+		}
 		if (pos != posPrev)
 		{
 			std::swap(pos, posPrev);
