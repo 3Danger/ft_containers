@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <memory>
 #include "Comparator.hpp"
+#include "Visualize.hpp"
 #include "pair.hpp"
 
 namespace ft
@@ -15,7 +16,7 @@ namespace ft
 	public:
 		typedef		Key					key_type;
 		typedef		T					mapped_type;
-		typedef		pair<Key, T>	value_type;
+		typedef		pair<Key, T>		value_type;
 		typedef		size_t				size_type;
 		typedef		ptrdiff_t			difference_type;
 		typedef		Compare				key_compare;
@@ -30,9 +31,9 @@ namespace ft
 	    
 	// * variables
 		struct Node;
-	    Node *_node = NULL;
+	    Node *_node;
 	private:
-	    size_type sizeNodes = 0;
+	    size_type _sizeNodes;
 	    // *Allocator _allocator;
 	    std::allocator<value_type> _allocator;
 	    std::allocator<Node>   _nodeAllocator;
@@ -45,7 +46,7 @@ namespace ft
 		// 	Node node;
 		// };
 	public:
-		map(void){}
+		map(void): _node(NULL), _sizeNodes(0) {}
 		map(const Allocator &__a): _allocator(_allocator){}
 		/*
 		map(map<Key, T> &&__m);
@@ -91,9 +92,9 @@ namespace ft
 		// clear
 
 		
-		bool insert(value_type&& value){
-			return insert(value);
-		}
+		// bool insert(value_type&& value){
+		// 	return insert(value);
+		// }
 		bool insert(const value_type &value){
 			// std::cout << "inserted " << value.first << std::endl;
 			if (not _node)
@@ -108,7 +109,39 @@ namespace ft
 
 		// void erase( iterator pos );
 		// void erase( iterator first, iterator last );
-		// size_type erase( const Key& key );
+		size_type erase( const Key& key )
+		{
+			if (not _node)
+				return 0;
+			Node * node = findNode(key, _node);
+			if (node)
+			{
+				--_sizeNodes;
+				// Node ** parentConnect = NULL;
+				// if (node->_parent)
+				// 	parentConnect = node->_parent->_lnode == node ? &node->_parent->_lnode : &node->_parent->_rnode;
+				// Node * oneChild = isOneChild(node);
+				// if (oneChild)
+				// {
+				// }
+				if (node->_parent)
+				{
+					Node ** parentCon = node->_parent->_lnode == node ? &node->_parent->_lnode : &node->_parent->_rnode;
+					*parentCon = NULL;
+					deleteOne(node, false);
+				}
+				else
+				{
+					deleteOne(node, true);
+					if (not _sizeNodes)
+					{
+						_node = NULL;
+					}
+				}
+				return 1;
+			}
+			return 0;
+		}
 		 
 		// void swap( map& other );
 		
@@ -165,7 +198,7 @@ namespace ft
 		{
 			size_t	_count;
 			value_type _value;
-			bool isBlack = false;
+			bool	_isBlack;
 			Node *	_rnode;
 			Node *	_lnode;
 			Node *	_parent;
@@ -173,22 +206,25 @@ namespace ft
 			Node()
 				:_count(0)
 				,_value(NULL)
+				,_isBlack(false)
 				,_rnode(NULL)
 				,_lnode(NULL)
 				,_parent(NULL){}
 			Node(const value_type value, Node * parnt = NULL)
 				:_count(0)
 				,_value(value)
+				,_isBlack(false)
 				,_rnode(NULL)
 				,_lnode(NULL)
 				,_parent(parnt){}
 			explicit Node(const Node &node)
 				:_count(node->_count)
 				,_value(node->_value)
+				,_isBlack(node->_isBlack)
 				,_rnode(node->_rnode)
 				,_lnode(node->_lnode)
 				,_parent(node->_parent){}
-			~Node();
+			~Node(){};
 		};  
     
         bool insert(const value_type& value, Node ** node, Node * parent = NULL)
@@ -202,10 +238,10 @@ namespace ft
 			else
 				return insert(value, &(node[0]->_rnode), *node);
 		}
-		
+	
 		void insert(Node ** where, Node * parent, Node * node)
 		{
-			//TODO remark color and recount black nodes
+			//TODO remark _isBlack and recount black nodes
 			if (not *where)
 			{
 				*where = node;
@@ -220,105 +256,209 @@ namespace ft
 				
 		}
 		
+		Node * findNode(Key const & key, Node * root)
+		{
+			if (key == root->_value.first)
+				return root;
+			if (_cmp(key, root->_value.first))
+			{
+				if (root->_lnode)
+					return findNode(key, root->_lnode);
+			}
+			else
+			{
+				if (root->_rnode)
+					return findNode(key, root->_rnode);
+			}
+			return NULL;
+		}
 		
 		bool newNode(const value_type& value, Node ** node, Node *parent)
 		{
-			++sizeNodes;
+			++_sizeNodes;
 			node[0] = _nodeAllocator.allocate(1);
 			_nodeAllocator.construct(*node, value, parent);
-			// TODO this balance red black
-			Node * tmp = *node;
-			// while(tmp)
-			// {
-				case_1(tmp);
-			// 	tmp = tmp->_parent;
-			// }
+			insertCase_1(*node);
 			return true;
-			// node[0]->_count = countBlack(*node);
 		}
+
 		
-		void case_1(Node *node)
+		void insertCase_1(Node *node)
 		{
 			if (node->_parent)
-				case_2(node);
+				insertCase_2(node);
 			else
-				node->isBlack = true;
+				node->_isBlack = true;
 		}
 		
-		void case_2(Node *node)
+		void insertCase_2(Node *node)
 		{
-			if (node->_parent->isBlack)
-				return; /* Tree is still valid */
+			if (node->_parent->_isBlack)
+				return ;
 			else
-				case_3(node);
+				insertCase_3(node);
 		}
 		
-		void case_3(Node *node)
+		void insertCase_3(Node *node)
 		{
 			Node *brother = getBrother(node), *p_parent;
 		
-			if (brother && not brother->isBlack) {
-			// && (node->parent->color == RED) Второе условие проверяется в case_2, то есть родитель уже является красным.
-				node->_parent->isBlack = true;
-				brother->isBlack = true;
+			if (brother && not brother->_isBlack) {
+				node->_parent->_isBlack = true;
+				brother->_isBlack = true;
 				p_parent = node->_parent->_parent;
-				p_parent->isBlack = false;
-				case_1(p_parent);
+				p_parent->_isBlack = false;
+				insertCase_1(p_parent);
 			} else {
-				case_4(node);
+				insertCase_4(node);
 			}
 		}
 		
-		void case_4(Node *node)
+		void insertCase_4(Node *node)
 		{
-			Node *g = grandparent(node);
+			Node *g = grandParent(node);
 		
 			if ((node == node->_parent->_rnode) && (node->_parent == g->_lnode)) {
-				rotate_left(node->_parent);
-		
-				/*
-				 * rotate_left может быть выполнен следующим образом, учитывая что уже есть *g =  grandparent(node) 
-				 *
-				 * Node *saved_p=g->_lnode, *saved_left_n=node->_lnode;
-				 * g->_lnode=node; 
-				 * node->_lnode=saved_p;
-				 * saved_p->_rnode=saved_left_n;
-				 * 
-				 */
-		
+				rotateLeft(node->_parent);
 				node = node->_lnode;
 			} else if ((node == node->_parent->_lnode) && (node->_parent == g->_rnode)) {
-				rotate_right(node->_parent);
-		
-				/*
-				 * rotate_right может быть выполнен следующим образом, учитывая что уже есть *g =  grandparent(node) 
-				 *
-				 * Node *saved_p=g->_rnode, *saved_right_n=node->_rnode;
-				 * g->_rnode=node; 
-				 * node->_rnode=saved_p;
-				 * saved_p->_lnode=saved_right_n;
-				 * 
-				 */
-		
+				rotateRight(node->_parent);
 				node = node->_rnode;
 			}
-			case_5(node);
+			insertCase_5(node);
 		}
 		
-		void case_5(Node *node)
+		void insertCase_5(Node *node)
 		{
 			Node *p_parent = node->_parent->_parent;
 		
-			node->_parent->isBlack = true;
-			p_parent->isBlack = false;
+			node->_parent->_isBlack = true;
+			p_parent->_isBlack = false;
 			if ((node == node->_parent->_lnode) && (node->_parent == p_parent->_lnode)) {
-				rotate_right(p_parent);
+				rotateRight(p_parent);
 			} else { /* (node == node->_parent->_rnode) && (node->_parent == p_parent->_rnode) */
-				rotate_left(p_parent);
+				rotateLeft(p_parent);
 			}
 		}
+
+		void	replace_node(Node ** node, Node ** child) {
+			child[0]->_parent = node[0]->_parent;
+			if (node == node[0]->_parent[0]->_lnode) {
+				node[0]->_parent->_lnode = child;
+			} else {
+				node[0]->_parent->_rnode = child;
+			}
+		}
+
+		bool is_sheet(Node * node)
+		{
+			return (node && not node->_rnode && not node->_lnode);
+		}
+		//! https://ru.wikipedia.org/wiki/Красно-чёрное_дерево#Удаление
+		void	deleteOne(Node *node, bool isRoot = false)
+		{
+			if (not isRoot)
+				deleteCase1(node->_parent);
+			_nodeAllocator.destroy(node);
+			_nodeAllocator.deallocate(node, 1);
+		}
+
+		void	deleteCase1(Node *node)
+		{
+			if (node->_parent != NULL)
+				deleteCase2(node);
+		}
+
+		void deleteCase2(Node *node)
+		{
+			Node *s = sibling(node);
+
+			if (not s->_isBlack) {
+				node->_parent->_isBlack = false;
+				s->_isBlack = true;
+				if (node == node->_parent->_lnode)
+					rotateLeft(node->_parent);
+				else
+					rotateRight(node->_parent);
+			} 
+			deleteCase3(node);
+		}
+
+		void deleteCase3(Node *node)
+		{
+			Node *s = sibling(node);
+
+			if ((node->_parent->_isBlack == true) &&
+				(s->_isBlack == true) &&
+				(s->_lnode->_isBlack == true) &&
+				(s->_rnode->_isBlack == true)) {
+				s->_isBlack = false;
+				deleteCase1(node->_parent);
+			} else
+				deleteCase4(node);
+		}
+
+		void deleteCase4(Node *node)
+		{
+			Node *s = sibling(node);
+
+			if ((node->_parent->_isBlack == false) &&
+				(s->_isBlack == true) &&
+				(s->_lnode->_isBlack == true) &&
+				(s->_rnode->_isBlack == true)) {
+				s->_isBlack = false;
+				node->_parent->_isBlack = true;
+			} else
+				deleteCase5(node);
+		}
+
+		void deleteCase5(Node *node)
+		{
+			Node *s = sibling(node);
+
+			if  (s->_isBlack == true) {
+				if ((node == node->_parent->_lnode) &&
+					(s->_rnode->_isBlack == true) &&
+					(s->_lnode->_isBlack == false)) {
+					s->_isBlack = false;
+					s->_lnode->_isBlack = true;
+					rotateRight(s);
+				} else if ((node == node->_parent->_rnode) &&
+						(s->_lnode->_isBlack == true) &&
+						(s->_rnode->_isBlack == false)) {
+					s->_isBlack = false;
+					s->_rnode->_isBlack = true;
+					rotateLeft(s);
+				}
+			}
+			deleteCase6(node);
+		}
+
+		void deleteCase6(Node *node)
+		{
+			Node *s = sibling(node);
+
+			s->_isBlack = node->_parent->_isBlack;
+			node->_parent->_isBlack = true;
+
+			if (node == node->_parent->_lnode) {
+				s->_rnode->_isBlack = true;
+				rotateLeft(node->_parent);
+			} else {
+				s->_lnode->_isBlack = true;
+				rotateRight(node->_parent);
+			}
+		}
+
+		Node * sibling(Node *node)
+		{
+			if (node == node->_parent->_lnode)
+				return node->_parent->_rnode;
+			else
+				return node->_parent->_lnode;
+		}
 		
-		Node * grandparent(Node * node)
+		Node * grandParent(Node * node)
 		{
 			if (node && node->_parent)
 				return node->_parent->_parent;
@@ -326,162 +466,69 @@ namespace ft
 				return NULL;
 		}
 		
-		void
-		rotate_left(Node *n)
+		void	rotateLeft(Node *node)
 		{
-		    Node *pivot = n->_rnode;
+		    Node *pivot = node->_rnode;
 			
-		    pivot->_parent = n->_parent; /* при этом, возможно, pivot становится корнем дерева */
-		    if (n->_parent) {
-		        if (n->_parent->_lnode==n)
-		            n->_parent->_lnode = pivot;
+		    pivot->_parent = node->_parent;
+		    if (node->_parent) {
+		        if (node->_parent->_lnode==node)
+		            node->_parent->_lnode = pivot;
 		        else
-		            n->_parent->_rnode = pivot;
+		            node->_parent->_rnode = pivot;
 		    }		
 			
-		    n->_rnode = pivot->_lnode;
+		    node->_rnode = pivot->_lnode;
 		    if (pivot->_lnode)
-		        pivot->_lnode->_parent = n;
+		        pivot->_lnode->_parent = node;
 		
-		    n->_parent = pivot;
-		    pivot->_lnode = n;
+		    node->_parent = pivot;
+		    pivot->_lnode = node;
 		    if (not pivot->_parent)
 		        _node = pivot;
 		}
 		
-		void
-		rotate_right(Node *n)
+		void	rotateRight(Node *node)
 		{
-		    Node *pivot = n->_lnode;
+		    Node *pivot = node->_lnode;
 			
-		    pivot->_parent = n->_parent; /* при этом, возможно, pivot становится корнем дерева */
-		    if (n->_parent) {
-		        if (n->_parent->_lnode==n)
-		            n->_parent->_lnode = pivot;
+		    pivot->_parent = node->_parent;
+		    if (node->_parent) {
+		        if (node->_parent->_lnode==node)
+		            node->_parent->_lnode = pivot;
 		        else
-		            n->_parent->_rnode = pivot;
+		            node->_parent->_rnode = pivot;
 		    }		
 			
-		    n->_lnode = pivot->_rnode;
+		    node->_lnode = pivot->_rnode;
 		    if (pivot->_rnode)
-		        pivot->_rnode->_parent = n;
+		        pivot->_rnode->_parent = node;
 		
-		    n->_parent = pivot;
-		    pivot->_rnode = n;
+		    node->_parent = pivot;
+		    pivot->_rnode = node;
 		    if (not pivot->_parent)
 		        _node = pivot;
 		}
 		
-		Node * getBrother(Node *n)
+		Node * getBrother(Node *node)
 		{
-			Node * g = grandparent(n);
+			Node * g = grandParent(node);
 			if (g == NULL)
-				return NULL; // No grandparent means no uncle
-			if (n->_parent == g->_lnode)
+				return NULL; // No grandParent means no uncle
+			if (node->_parent == g->_lnode)
 				return g->_rnode;
 			else
 				return g->_lnode;
 		}
-
-		
-		// /**
-		//  * @brief detecting type, angle or slash microPattern
-		//  * 
-		//  * @param node 
-		//  * @return true if slash
-		//  * @return false is angle
-		//  */
-		// bool detectTypeMicroPattern(Node * node)
-		// {
-		// 	Node * three, *two, *one;
-		// 	three = node;
-		// 	two = node->_parent;
-		// 	one = two->_parent;
-		// 	if (one->_value.first < three->_value.first)
-		// 	{
-		// 		if (three->_value.first > two->_value.first)
-		// 			return true;
-		// 		else
-		// 			return false;
-		// 	}
-		// 	else
-		// 	{
-		// 		if (three->_value.first < two->_value.first)
-		// 			return true;
-		// 		else
-		// 			return false;
-		// 	}
-		// }
-		
-		
-			
-		// void rotateNodeSlash(Node * three)
-		// {
-		// 	std::cout << "rotateNodeSlash(Node* three)" << std::endl;
-			
-		// 	Node * two = three->_parent;
-		// 	Node * one = two->_parent;
-		// 	breakParent(two);
-		// 	setParentFrom(two, one);
-		// 	if (one)
-		// 		insert(&two, two, one);
-		// 	if (not two->_parent)
-		// 		_node = two;
-		// 	// updateMark(_node, true);
-		// 	// updateMark(two, one ? one->isBlack : true);
-		// }
-		
-		// //TODO !!!!!!!!!
-		// void rotateNodeAngle(Node * three)
-		// {
-		// 	std::cout << "rotateNodeAngle(Node * three)" << std::endl;
-			
-		// 	Node * two = three->_parent;
-		// 	Node * one = two->_parent;
-		// 	Node * zero = one->_parent;
-			
-		// 	// breakParent(two);
-		// 	breakParent(three);
-		// 	breakParent(two);
-		// 	Node ** connectOfOne = getConnectFromParent(one);
-		// 	if (connectOfOne)
-		// 		*connectOfOne = three;
-		// 	else
-		// 		_node = three;
-		// 	three->_parent = zero;
-		// 	insert(&three, three, one);
-		// 	insert(&three, three, two);
-		// }
-		
-		Node ** getConnectFromParent(Node * node)
+		Node * isOneChild(Node * node)
 		{
-			Node * parent = node->_parent;
-			if (parent)
-			{
-				if (parent->_lnode == node)
-					return &parent->_lnode;
-				return &parent->_rnode;
-			}
+			if (node->_lnode && not node->_rnode)
+				return node->_lnode;
+			if (node->_rnode && not node->_lnode)
+				return node->_rnode;
 			return NULL;
 		}
-		
-		Node * maxCount(Node * node)
-		{
-			Node *l = NULL, *r = NULL;
-			if(node->_lnode)
-				l = maxCount(node->_lnode);
-			if(node->_rnode)
-				r = maxCount(node->_rnode);
-			if ((r && not l) || (r && l && r->_count > l->_count))
-				return r;
-			else if ((not r && l) || (r && l && r->_count < l->_count))
-				return l;
-			if (l && r && l->_count == r->_count)
-				return NULL;
-			return node;
-		}
 	private:
-		
 	}; // map
 } // namespace ft
 	

@@ -20,56 +20,26 @@ using namespace ft;
 
 #define VISUAL
 
-
-std::ostream& operator<<(std::ostream &os, map<int, std::string>::Node const * node)
-{
-	if (node)
-		os << std::to_string(node->_value.first);
-	else
-		os << "empty";
-	return os;
-}
-
 int    main()
 {
-	map<int, std::string>::Node * node;
-	map<int, std::string> m;
+	typedef map<int, std::string>	_map_t;
+	typedef _map_t::Node			_node_t;
+	_map_t m;
+
 	std::srand(22);
-	for (int i = 0; i < 40; i++)
+	for (int i = 0; i < 25; i++)
 	{
 		m.insert(pair<int, std::string>(i, "_"));	
 	}
-	Visualize<map<int, std::string>::Node > v(m._node);
-	v.run(m._node);
-	
-	// m.insert(pair<int, std::string>(11, "_"));
-	// m.insert(pair<int, std::string>(7, "_"));
-	// m.insert(pair<int, std::string>(15, "_"));
-	// m.insert(pair<int, std::string>(5, "_"));
-	// m.insert(pair<int, std::string>(11, "_"));
-	// m.insert(pair<int, std::string>(15, "_"));
-	// m.insert(pair<int, std::string>(7, "_"));
-	// m.insert(pair<int, std::string>(5, "_"));
-	// for (int i = 10; i; --i)
-	// {
-	// 	// m.insert(pair<int, std::string>(std::rand() % 20, "_"));
-	// 	m.insert(pair<int, std::string>(i, "_"));
-	// 	// if (i < 6)
-	// 	// {
-	// 		Visualize<map<int, std::string>::Node > v(m._node);
-	// 		v.run();
-	// 	// }
-	// }
-	// std::cout << m.findUnbalancedNode(m._node) << std::endl;
-	
-	// std::cout << m.findMaxDepthNode(m._node)->_bDepth << std::endl;
-	
-	// m.insert(pair<int, std::string>(3, "_"));
-	// m.insert(pair<int, std::string>(7, "_"));
-	// m.insert(pair<int, std::string>(4, "_"));
-	// m.insert(pair<int, std::string>(6, "_"));
-	// m.insert(pair<int, std::string>(1, "_"));
-	// m.insert(pair<int, std::string>(2, "_"));
+
+	Visualize<_node_t> v;
+	v.run(0, m._node);
+	// for (int i = 0; i < 23; i++)
+	// 	m.erase(i);
+	m.erase(0);
+	std::cout << "delete" << std::endl;
+	v.run(0, m._node);
+
 	
 }
 /*

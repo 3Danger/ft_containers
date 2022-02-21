@@ -12,23 +12,12 @@
 #include "../ColourConsole.hpp"
 
 
-template <class node_t>
+template <class Node>
 class Visualize{
 public:
-	node_t * _node;
-	size_t deep = 0;
-	std::stringstream str;
-	Visualize(node_t * m): _node(m)
-	{
-		deep = recDepth(_node) + 8;
-	}
-	// Visualize(map_t & m): _node(m._node)
-	// {
-	// 	deep = recDepth(_node) + 4;
-	// }
-
-
-	size_t recDepth(node_t * node, size_t s = 0)
+	// std::stringstream str;
+	Visualize(){}
+	size_t recDepth(Node * node, size_t s = 0)
 	{
 		if (not node)
 			return s;
@@ -36,91 +25,75 @@ public:
 		return (std::max(recDepth(node->_lnode, s), recDepth(node->_rnode, s)));
 	}
 
-	int _print_t(node_t *tree, int is_left, int offset, int depth, char s[64<<2][255<<2])
+	struct Trunk
 	{
-	    char b[deep];
-	    int width = 3;
+		Trunk *prev;
+		std::string str;
 	
-	    if (!tree) return 0;
+		Trunk(Trunk *prev, std::string str)
+		{
+			this->prev = prev;
+			this->str = str;
+		}
+	};
 	
-		if (tree->isBlack)
-	        sprintf(b, "%02db", tree->_value.first);
-	    else
-	        sprintf(b, "%02dr", tree->_value.first);
+	// Helper function to print branches of the binary tree
+	void showTrunks(Trunk *p)
+	{
+		if (p == nullptr) {
+			return;
+		}
 	
-	    int left  = _print_t(tree->_lnode,  1, offset,                depth + 1, s);
-	    int right = _print_t(tree->_rnode, 0, offset + left + width, depth + 1, s);
-	
-	    for (int i = 0; i < width; i++)
-	        s[2 * depth][offset + left + i] = b[i];
-	
-	    if (depth && is_left) {
-	
-	        for (int i = 0; i < width + right; i++)
-	            s[2 * depth - 1][offset + left + width/2 + i] = '-';
-	
-	        s[2 * depth - 1][offset + left + width/2] = '/';
-	        s[2 * depth - 1][offset + left + width + right + width/2] = '|';
-	
-	    } else if (depth && !is_left) {
-	
-	        for (int i = 0; i < left + width; i++)
-	            s[2 * depth - 1][offset - width/2 + i] = '-';
-	
-	        s[2 * depth - 1][offset + left + width/2] = '\\';
-	        s[2 * depth - 1][offset - width/2 - 1] = '|';
-	    }	
-	    return left + width + right;
+		showTrunks(p->prev);
+		std::cout << p->str;
 	}
 	
-	void run(node_t * node = NULL)
+	void run(int const & x, Node* root, Trunk *prev = NULL, bool isLeft = false)
 	{
-		
-		node_t *tree = node ? node : _node;
-	    char s[deep][255<<2];
-	    for (int i = 0; i < deep; i++)
-	        sprintf(s[i], "%80s", " ");
+		if (root == nullptr) {
+			return;
+		}
 	
-	    _print_t(tree, 0, 0, 0, s);
+		std::string prev_str = "    ";
+		Trunk *trunk = new Trunk(prev, prev_str);
 	
-	    for (int i = 0; i < deep; i++)
-	    {
-	        std::string ss(s[i]);
-	        std::string::size_type pos = 0;
-	        if (i & 1)
-				std::cout << CC::getColor() << ss << CC::getColor() << std::endl;
+		run(x, root->_rnode, trunk, true);
+	
+		if (!prev) {
+			trunk->str = "———";
+		}
+		else if (isLeft)
+		{
+			trunk->str = "+——-";
+			prev_str = "   |";
+		}
+		else {
+			trunk->str = "+——";
+			prev->str = prev_str;
+		}
+	
+		showTrunks(trunk);
+		if (x != root->_value.first)
+		{
+			if (root->_isBlack)
+				std::cout << " " << CC::getColor(CC::BLUE) << root->_value.first << CC::getColor() << std::endl;
 			else
-			{
-				while(pos != ss.npos)
-					std::cout << getNext(ss, pos);
-				std::cout << std::endl;
-				// std::cout << CC::getColor(CC::GREEN) << s[i] << CC::getColor() << std::endl;
-			}
+				std::cout << " " << CC::getColor(CC::RED) << root->_value.first << CC::getColor() << std::endl;
 		}
-	}
-	std::string getNext(std::string line, std::string::size_type & posPrev)
-	{
-		std::string::size_type pos;
-		std::string::size_type posB = line.find_first_of("blk", posPrev);
-		std::string::size_type posR = line.find_first_of("red", posPrev);
-		
-		pos = std::min(posB, posR);
-		if (pos == line.npos)
+		else
 		{
-			posPrev = pos;
-			return "";
+			if (root->_isBlack)
+				std::cout << " " << CC::getColor(CC::WHITE, CC::BLUE) << root->_value.first << CC::getColor() << std::endl;
+			else
+				std::cout << " " << CC::getColor(CC::WHITE, CC::RED) << root->_value.first << CC::getColor() << std::endl;
 		}
-		if (pos != posPrev)
-		{
-			std::swap(pos, posPrev);
-			return line.substr(pos, (posPrev - pos) - 2) + " ";
+	
+		if (prev) {
+			prev->str = prev_str;
 		}
-		posPrev = pos+2;
-		if (posB < posR)
-		{
-			return CC::getColor(CC::BLUE, CC::BLACK) + line.substr(pos-2, 2) + CC::getColor();
-		}
-		return CC::getColor(CC::RED) + line.substr(pos-2, 2) + CC::getColor();
+		trunk->str = "   |";
+	
+		run(x, root->_lnode, trunk, false);
 	}
 };
 
@@ -138,19 +111,19 @@ public:
 // 	}
 // public:
 // 	typedef ft::map<Key, T> map_t;
-// 	typedef typename map_t::node_t node_t;
-// 	node_t * _node;
+// 	typedef typename map_t::Node Node;
+// 	Node * _node;
 // 	size_t deep = 0;
 // 	std::stringstream str;
 // 	Visualize(map_t & m): _node(m._node){}
-// 	size_t recDepth(node_t * node, size_t s = 0)
+// 	size_t recDepth(Node * node, size_t s = 0)
 // 	{
 // 		if (not node)
 // 			return s;
 // 		s++;
 // 		return (std::max(recDepth(node->_lnode, s), recDepth(node->_rnode, s)));
 // 	}
-// 	std::string recRun(size_t size, size_t deepCounter, node_t * node, char tree)
+// 	std::string recRun(size_t size, size_t deepCounter, Node * node, char tree)
 // 	{
 // 		std::string result;
 // 		std::string value;
