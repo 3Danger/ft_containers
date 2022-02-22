@@ -75,14 +75,14 @@ public:
 		showTrunks(trunk);
 		if (x != root->_value.first)
 		{
-			if (root->_isBlack)
+			if (root->_color)
 				std::cout << " " << CC::getColor(CC::BLUE) << root->_value.first << CC::getColor() << std::endl;
 			else
 				std::cout << " " << CC::getColor(CC::RED) << root->_value.first << CC::getColor() << std::endl;
 		}
 		else
 		{
-			if (root->_isBlack)
+			if (root->_color)
 				std::cout << " " << CC::getColor(CC::WHITE, CC::BLUE) << root->_value.first << CC::getColor() << std::endl;
 			else
 				std::cout << " " << CC::getColor(CC::WHITE, CC::RED) << root->_value.first << CC::getColor() << std::endl;

@@ -33,6 +33,7 @@ namespace ft
 		struct Node;
 	    Node *_node;
 	private:
+		typedef enum e_color{RED, BLACK} eColor;
 	    size_type _sizeNodes;
 	    // *Allocator _allocator;
 	    std::allocator<value_type> _allocator;
@@ -117,27 +118,7 @@ namespace ft
 			if (node)
 			{
 				--_sizeNodes;
-				// Node ** parentConnect = NULL;
-				// if (node->_parent)
-				// 	parentConnect = node->_parent->_lnode == node ? &node->_parent->_lnode : &node->_parent->_rnode;
-				// Node * oneChild = isOneChild(node);
-				// if (oneChild)
-				// {
-				// }
-				if (node->_parent)
-				{
-					Node ** parentCon = node->_parent->_lnode == node ? &node->_parent->_lnode : &node->_parent->_rnode;
-					*parentCon = NULL;
-					deleteOne(node, false);
-				}
-				else
-				{
-					deleteOne(node, true);
-					if (not _sizeNodes)
-					{
-						_node = NULL;
-					}
-				}
+				delOne(node);
 				return 1;
 			}
 			return 0;
@@ -198,7 +179,7 @@ namespace ft
 		{
 			size_t	_count;
 			value_type _value;
-			bool	_isBlack;
+			eColor  _color;
 			Node *	_rnode;
 			Node *	_lnode;
 			Node *	_parent;
@@ -206,21 +187,21 @@ namespace ft
 			Node()
 				:_count(0)
 				,_value(NULL)
-				,_isBlack(false)
+				,_color(RED)
 				,_rnode(NULL)
 				,_lnode(NULL)
 				,_parent(NULL){}
 			Node(const value_type value, Node * parnt = NULL)
 				:_count(0)
 				,_value(value)
-				,_isBlack(false)
+				,_color(RED)
 				,_rnode(NULL)
 				,_lnode(NULL)
 				,_parent(parnt){}
 			explicit Node(const Node &node)
 				:_count(node->_count)
 				,_value(node->_value)
-				,_isBlack(node->_isBlack)
+				,_color(node->color)
 				,_rnode(node->_rnode)
 				,_lnode(node->_lnode)
 				,_parent(node->_parent){}
@@ -241,7 +222,7 @@ namespace ft
 	
 		void insert(Node ** where, Node * parent, Node * node)
 		{
-			//TODO remark _isBlack and recount black nodes
+			//TODO remark _color and recount black nodes
 			if (not *where)
 			{
 				*where = node;
@@ -288,12 +269,12 @@ namespace ft
 			if (node->_parent)
 				insertCase_2(node);
 			else
-				node->_isBlack = true;
+				node->_color = BLACK;
 		}
 		
 		void insertCase_2(Node *node)
 		{
-			if (node->_parent->_isBlack)
+			if (node->_parent->_color)
 				return ;
 			else
 				insertCase_3(node);
@@ -303,11 +284,11 @@ namespace ft
 		{
 			Node *brother = getBrother(node), *p_parent;
 		
-			if (brother && not brother->_isBlack) {
-				node->_parent->_isBlack = true;
-				brother->_isBlack = true;
+			if (brother && not brother->_color) {
+				node->_parent->_color = BLACK;
+				brother->_color = BLACK;
 				p_parent = node->_parent->_parent;
-				p_parent->_isBlack = false;
+				p_parent->_color = RED;
 				insertCase_1(p_parent);
 			} else {
 				insertCase_4(node);
@@ -332,8 +313,8 @@ namespace ft
 		{
 			Node *p_parent = node->_parent->_parent;
 		
-			node->_parent->_isBlack = true;
-			p_parent->_isBlack = false;
+			node->_parent->_color = BLACK;
+			p_parent->_color = RED;
 			if ((node == node->_parent->_lnode) && (node->_parent == p_parent->_lnode)) {
 				rotateRight(p_parent);
 			} else { /* (node == node->_parent->_rnode) && (node->_parent == p_parent->_rnode) */
@@ -349,114 +330,186 @@ namespace ft
 				node[0]->_parent->_rnode = child;
 			}
 		}
-
-		bool is_sheet(Node * node)
+		
+		bool getRedOfSheets(Node * node)
 		{
-			return (node && not node->_rnode && not node->_lnode);
-		}
-		//! https://ru.wikipedia.org/wiki/Красно-чёрное_дерево#Удаление
-		void	deleteOne(Node *node, bool isRoot = false)
-		{
-			if (not isRoot)
-				deleteCase1(node->_parent);
-			_nodeAllocator.destroy(node);
-			_nodeAllocator.deallocate(node, 1);
-		}
-
-		void	deleteCase1(Node *node)
-		{
-			if (node->_parent != NULL)
-				deleteCase2(node);
-		}
-
-		void deleteCase2(Node *node)
-		{
-			Node *s = sibling(node);
-
-			if (not s->_isBlack) {
-				node->_parent->_isBlack = false;
-				s->_isBlack = true;
-				if (node == node->_parent->_lnode)
-					rotateLeft(node->_parent);
-				else
-					rotateRight(node->_parent);
-			} 
-			deleteCase3(node);
-		}
-
-		void deleteCase3(Node *node)
-		{
-			Node *s = sibling(node);
-
-			if ((node->_parent->_isBlack == true) &&
-				(s->_isBlack == true) &&
-				(s->_lnode->_isBlack == true) &&
-				(s->_rnode->_isBlack == true)) {
-				s->_isBlack = false;
-				deleteCase1(node->_parent);
-			} else
-				deleteCase4(node);
-		}
-
-		void deleteCase4(Node *node)
-		{
-			Node *s = sibling(node);
-
-			if ((node->_parent->_isBlack == false) &&
-				(s->_isBlack == true) &&
-				(s->_lnode->_isBlack == true) &&
-				(s->_rnode->_isBlack == true)) {
-				s->_isBlack = false;
-				node->_parent->_isBlack = true;
-			} else
-				deleteCase5(node);
-		}
-
-		void deleteCase5(Node *node)
-		{
-			Node *s = sibling(node);
-
-			if  (s->_isBlack == true) {
-				if ((node == node->_parent->_lnode) &&
-					(s->_rnode->_isBlack == true) &&
-					(s->_lnode->_isBlack == false)) {
-					s->_isBlack = false;
-					s->_lnode->_isBlack = true;
-					rotateRight(s);
-				} else if ((node == node->_parent->_rnode) &&
-						(s->_lnode->_isBlack == true) &&
-						(s->_rnode->_isBlack == false)) {
-					s->_isBlack = false;
-					s->_rnode->_isBlack = true;
-					rotateLeft(s);
-				}
+			if (node->_rnode)
+			{
+				if (not node->_color)
+					return false;
 			}
-			deleteCase6(node);
-		}
-
-		void deleteCase6(Node *node)
-		{
-			Node *s = sibling(node);
-
-			s->_isBlack = node->_parent->_isBlack;
-			node->_parent->_isBlack = true;
-
-			if (node == node->_parent->_lnode) {
-				s->_rnode->_isBlack = true;
-				rotateLeft(node->_parent);
-			} else {
-				s->_lnode->_isBlack = true;
-				rotateRight(node->_parent);
+			if (node->_lnode)
+			{
+				if (not node->_color)
+					return false;
 			}
+			return true;
 		}
-
-		Node * sibling(Node *node)
+		
+		void delOne(Node * node)
 		{
-			if (node == node->_parent->_lnode)
-				return node->_parent->_rnode;
+			 
+		}
+		
+		void del_red2(Node * node)
+		{
+			Node * lmax = findMax(node->_lnode);
+			swapPosiion(node, lmax);
+			// _nodeAllocator.destroy(node);
+			// _nodeAllocator.deallocate(node, 1);
+		}
+		
+		void del_black2(Node * node)
+		{
+			Node * oneChild = NULL;
+			if (isOneChild(node->_rnode))
+				oneChild = node->_rnode;
+			else if (isOneChild(node->_lnode))
+				oneChild = node->_lnode;
 			else
-				return node->_parent->_lnode;
+			{
+				std::cout << "Хуяк, а у него оказалось все дети с двумя детьми" << std::endl;
+				return ;
+			}
+			swapPosiion(node, oneChild);
+			//!...... del with one child elem
 		}
+		
+		void del_black1(Node * node)
+		{
+			
+		}
+		
+		void swapPosiion(Node *n1, Node *n2)
+		{
+			std::swap(n1->_value.first, n2->_value.first);
+			std::swap(n1->_value.second, n2->_value.second);
+		}
+		
+		Node * findMax(Node * node)
+		{
+			if (node->_rnode)
+				return findMax(node->_rnode);
+			return node;
+		}
+
+		// bool is_sheet(Node * node)
+		// {
+		// 	return (node && not node->_rnode && not node->_lnode);
+		// }
+		// //! https://ru.wikipedia.org/wiki/Красно-чёрное_дерево#Удаление
+		// void	deleteOne(Node *node)
+		// {
+		// 	Node *child = is_sheet(n->right) ? n->left : n->right;
+		    
+		//     if (child)
+		//     {
+		// 		replace_node(n, child);
+		// 		if (n->color == BLACK) {
+		// 			if (child->color == RED)
+		// 				child->color = BLACK;
+		// 			else
+		// 				delete_case1(child);
+		// 		}
+		// 	}
+		// 	_nodeAllocator.destroy(node);
+		// 	_nodeAllocator.deallocate(node, 1);
+		// }
+
+		// void	deleteCase1(Node *node)
+		// {
+		// 	if (node->_parent != NULL)
+		// 		deleteCase2(node);
+		// }
+
+		// void deleteCase2(Node *node)
+		// {
+		// 	Node *s = sibling(node);
+
+		// 	if (not s->_color) {
+		// 		node->_parent->_color = false;
+		// 		s->_color = true;
+		// 		if (node == node->_parent->_lnode)
+		// 			rotateLeft(node->_parent);
+		// 		else
+		// 			rotateRight(node->_parent);
+		// 	} 
+		// 	deleteCase3(node);
+		// }
+
+		// void deleteCase3(Node *node)
+		// {
+		// 	Node *s = sibling(node);
+
+		// 	if ((node->_parent->_color == true) &&
+		// 		(s->_color == true) &&
+		// 		(s->_lnode->_color == true) &&
+		// 		(s->_rnode->_color == true)) {
+		// 		s->_color = false;
+		// 		deleteCase1(node->_parent);
+		// 	} else
+		// 		deleteCase4(node);
+		// }
+
+		// void deleteCase4(Node *node)
+		// {
+		// 	Node *s = sibling(node);
+
+		// 	if ((node->_parent->_color == false) &&
+		// 		(s->_color == true) &&
+		// 		(s->_lnode->_color == true) &&
+		// 		(s->_rnode->_color == true)) {
+		// 		s->_color = false;
+		// 		node->_parent->_color = true;
+		// 	} else
+		// 		deleteCase5(node);
+		// }
+
+		// void deleteCase5(Node *node)
+		// {
+		// 	Node *s = sibling(node);
+
+		// 	if  (s->_color == true) {
+		// 		if ((node == node->_parent->_lnode) &&
+		// 			(s->_rnode->_color == true) &&
+		// 			(s->_lnode->_color == false)) {
+		// 			s->_color = false;
+		// 			s->_lnode->_color = true;
+		// 			rotateRight(s);
+		// 		} else if ((node == node->_parent->_rnode) &&
+		// 				(s->_lnode->_color == true) &&
+		// 				(s->_rnode->_color == false)) {
+		// 			s->_color = false;
+		// 			s->_rnode->_color = true;
+		// 			rotateLeft(s);
+		// 		}
+		// 	}
+		// 	deleteCase6(node);
+		// }
+
+		// void deleteCase6(Node *node)
+		// {
+		// 	Node *s = sibling(node);
+
+		// 	s->_color = node->_parent->_color;
+		// 	node->_parent->_color = true;
+
+		// 	if (node == node->_parent->_lnode) {
+		// 		s->_rnode->_color = true;
+		// 		rotateLeft(node->_parent);
+		// 	} else {
+		// 		s->_lnode->_color = true;
+		// 		rotateRight(node->_parent);
+		// 	}
+		// }
+
+		// Node * sibling(Node *node)
+		// {
+		// 	if (node == node->_parent->_lnode)
+		// 		return node->_parent->_rnode;
+		// 	else
+		// 		return node->_parent->_lnode;
+		// }
 		
 		Node * grandParent(Node * node)
 		{
