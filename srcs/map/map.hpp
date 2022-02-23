@@ -117,7 +117,6 @@ namespace ft
 			Node * node = findNode(key, _node);
 			if (node)
 			{
-				--_sizeNodes;
 				delOne(node);
 				return 1;
 			}
@@ -331,65 +330,228 @@ namespace ft
 			}
 		}
 		
-		bool getRedOfSheets(Node * node)
+		size_type countChilds(Node * node)
 		{
-			if (node->_rnode)
-			{
-				if (not node->_color)
-					return false;
-			}
-			if (node->_lnode)
-			{
-				if (not node->_color)
-					return false;
-			}
-			return true;
+			size_type	i = 0;
+			node->_lnode && ++i;
+			node->_rnode && ++i;
+			return i;
 		}
-		
+
+		void changeParent(Node * from, Node * to)
+		{
+			if (from->_parent)
+				(
+					from->_parent->_lnode == from ? \
+					from->_parent->_lnode : \
+					from->_parent->_rnode
+				) = to;
+			else
+				_node = to;
+			to->_parent = from->_parent;
+		}
+
+		void breakParent(Node * node)
+		{
+			Node ** connect;
+			if (node->_parent->_lnode == node)
+				connect = &node->_parent->_lnode;
+			else
+				connect = &node->_parent->_rnode;
+			if (*connect == node)
+				*connect = NULL;
+			node->_parent = NULL;
+		}
+	
+		void stupidDelete(Node * node)
+		{
+			if (node->_parent)
+				breakParent(node);
+			else
+				_node = NULL;
+			_nodeAllocator.destroy(node);
+			_nodeAllocator.deallocate(node, 1);
+			--_sizeNodes;
+		}
+
 		void delOne(Node * node)
 		{
-			 
-		}
-		
-		void del_red2(Node * node)
-		{
-			Node * lmax = findMax(node->_lnode);
-			swapPosiion(node, lmax);
-			// _nodeAllocator.destroy(node);
-			// _nodeAllocator.deallocate(node, 1);
-		}
-		
-		void del_black2(Node * node)
-		{
-			Node * oneChild = NULL;
-			if (isOneChild(node->_rnode))
-				oneChild = node->_rnode;
-			else if (isOneChild(node->_lnode))
-				oneChild = node->_lnode;
+			if (node->_color == RED)
+			{
+				switch (countChilds(node))
+				{
+					case 0: /* TODO 0*/; break;
+					case 1: /* TODO 1*/ ;break;
+					case 2: del_red_2(&node) ;break;
+				}
+			}
 			else
 			{
-				std::cout << "Хуяк, а у него оказалось все дети с двумя детьми" << std::endl;
-				return ;
+				switch (countChilds(node))
+				{
+					case 0: del_black_0(node); break;
+					case 1: del_black_1(node) ;break;
+					case 2: /* TODO 2*/ ;break;
+				}
 			}
-			swapPosiion(node, oneChild);
-			//!...... del with one child elem
+			stupidDelete(node);
 		}
-		
-		void del_black1(Node * node)
+
+		bool isChildBlacks(Node * node)
 		{
-			
+			return (node->_lnode == NULL || node->_lnode->_color == BLACK)\
+					&& (node->_rnode == NULL || node->_rnode->_color == BLACK);
+		}
+
+		void del_black_0(Node * node)
+		{
+			size_type countChilds;
+			Node * parent = node->_parent;
+			Node * bro = getBrother(node);
+			if (parent == NULL)
+			{
+				return;
+			}
+			if (parent->_color == RED)
+			{
+				if (bro == NULL || bro->_color == BLACK)
+				{
+					if (bro && isChildBlacks(bro))
+						std::swap(bro->_color, parent->_color);
+					else if (bro == NULL)
+						parent->_color = BLACK;
+					else if (getNextLine(bro) && getNextLine(bro)->_color == RED)
+					{
+						bro->_color = RED;
+						parent->_color = BLACK;
+						if (isRight(bro))
+							rotateLeft(parent);
+						else
+							rotateRight(parent);
+					}
+					else if ((not getNextLine(bro) || getNextLine(bro)->_color == BLACK) && getNextAngle(bro) && getNextAngle(bro)->_color == RED)
+					{
+						BB5(node);
+					}
+				}
+			}
+			else // * parent is black
+			{
+				if (bro && bro->_color == RED)
+				{
+					Node * broAngle = getNextAngle(bro);
+					if (not broAngle || broAngle->_color == BLACK)
+					{
+						if (isChildBlacks(broAngle))
+						{
+							bro->_color = BLACK;
+							broAngle->_color = RED;
+							if (isRight(bro))
+								rotateLeft(parent->_parent);
+							else
+								rotateRight(parent->_parent);
+						}
+						else if (getNextAngle(broAngle) && getNextAngle(broAngle)->_color == RED)
+						{
+							rotateHard(bro);
+						}
+					}
+				}
+				else if (bro) //* bro is BLACK
+				{
+					Node * angleChild = getNextAngle(bro);
+					if (angleChild && angleChild->_color == RED && isChildBlacks(angleChild))
+					{
+						BB5(node);
+					}
+				}
+			}
+		}
+
+		void BB5(Node * node)
+		{
+			Node * bro = getBrother(node);
+			Node * angleChild = getNextAngle(bro);
+			angleChild->_color = BLACK;
+			rotateHard(bro);
+		}
+
+
+		void rotateHard(Node * _3)
+		{
+			Node * _7 = _3->_parent;
+			Node * _5 = getNextAngle(_3);
+			Node * a3 = getNextLine(_3);
+			Node * c5 = getNextLine(_5);
+			Node * b5 = getNextAngle(_5);
+
+			*getConnect(_3) = c5;
+			c5->_parent = _7;
+			*getConnect(b5) = _3;
+			_3->_parent = _5;
+			*getConnect(_5) = b5;
+			b5->_parent = _3;
+			if (_7->_parent)
+				*getConnect(_7) = _5;
+			else
+				_node = _5;
+			_5->_parent = _7->_parent;
+			*getConnect(c5) = _7;
+			_7->_parent = _5;
+			b5->_color = BLACK;
+		}
+
+		Node ** getConnect(Node * node)
+		{
+			return isRight(node) ? &node->_parent->_rnode : &node->_parent->_lnode;
+		}
+
+		Node * getNextLine(Node * node)
+		{
+			if (isRight(node))
+				return node->_rnode;
+			return node->_lnode;
+		}
+		Node * getNextAngle(Node * node)
+		{
+			if (not isRight(node))
+				return node->_rnode;
+			return node->_lnode;
+		}
+
+		bool isRight(Node * node)
+		{
+			return (node->_parent->_rnode == node);
+		}
+
+		void del_black_1(Node * node)
+		{
+			Node * child = node->_lnode ? node->_lnode : node->_rnode;
+			Node * parent = node->_parent;
+			swap_values(node, child);
+			delOne(child);
+		}
+
+
+		void del_red_2(Node ** node)
+		{
+			Node * lmax = getLastRight(node[0]->_lnode);
+			swap_values(*node, lmax);
+			*node = lmax;
 		}
 		
-		void swapPosiion(Node *n1, Node *n2)
+
+		
+		void swap_values(Node *n1, Node *n2)
 		{
 			std::swap(n1->_value.first, n2->_value.first);
 			std::swap(n1->_value.second, n2->_value.second);
 		}
 		
-		Node * findMax(Node * node)
+		Node * getLastRight(Node * node)
 		{
 			if (node->_rnode)
-				return findMax(node->_rnode);
+				return getLastRight(node->_rnode);
 			return node;
 		}
 
@@ -401,7 +563,6 @@ namespace ft
 		// void	deleteOne(Node *node)
 		// {
 		// 	Node *child = is_sheet(n->right) ? n->left : n->right;
-		    
 		//     if (child)
 		//     {
 		// 		replace_node(n, child);
@@ -415,17 +576,14 @@ namespace ft
 		// 	_nodeAllocator.destroy(node);
 		// 	_nodeAllocator.deallocate(node, 1);
 		// }
-
 		// void	deleteCase1(Node *node)
 		// {
 		// 	if (node->_parent != NULL)
 		// 		deleteCase2(node);
 		// }
-
 		// void deleteCase2(Node *node)
 		// {
 		// 	Node *s = sibling(node);
-
 		// 	if (not s->_color) {
 		// 		node->_parent->_color = false;
 		// 		s->_color = true;
@@ -436,11 +594,9 @@ namespace ft
 		// 	} 
 		// 	deleteCase3(node);
 		// }
-
 		// void deleteCase3(Node *node)
 		// {
 		// 	Node *s = sibling(node);
-
 		// 	if ((node->_parent->_color == true) &&
 		// 		(s->_color == true) &&
 		// 		(s->_lnode->_color == true) &&
@@ -450,11 +606,9 @@ namespace ft
 		// 	} else
 		// 		deleteCase4(node);
 		// }
-
 		// void deleteCase4(Node *node)
 		// {
 		// 	Node *s = sibling(node);
-
 		// 	if ((node->_parent->_color == false) &&
 		// 		(s->_color == true) &&
 		// 		(s->_lnode->_color == true) &&
@@ -464,11 +618,9 @@ namespace ft
 		// 	} else
 		// 		deleteCase5(node);
 		// }
-
 		// void deleteCase5(Node *node)
 		// {
 		// 	Node *s = sibling(node);
-
 		// 	if  (s->_color == true) {
 		// 		if ((node == node->_parent->_lnode) &&
 		// 			(s->_rnode->_color == true) &&
@@ -486,14 +638,11 @@ namespace ft
 		// 	}
 		// 	deleteCase6(node);
 		// }
-
 		// void deleteCase6(Node *node)
 		// {
 		// 	Node *s = sibling(node);
-
 		// 	s->_color = node->_parent->_color;
 		// 	node->_parent->_color = true;
-
 		// 	if (node == node->_parent->_lnode) {
 		// 		s->_rnode->_color = true;
 		// 		rotateLeft(node->_parent);
@@ -502,7 +651,6 @@ namespace ft
 		// 		rotateRight(node->_parent);
 		// 	}
 		// }
-
 		// Node * sibling(Node *node)
 		// {
 		// 	if (node == node->_parent->_lnode)

@@ -33,15 +33,17 @@ int    main()
 	}
 
 	Visualize<_node_t> v;
-	v.run(0, m._node);
+	// v.run(0, m._node);
 	// for (int i = 0; i < 23; i++)
 	// 	m.erase(i);
 	// m.erase(0);
-	// m.erase(1);
-	
+#ifdef SHOW
 	v.run(0, m._node);
-	// m.erase(1);
-	std::cout << "delete" << std::endl;
+	m.erase(21);
+#endif
+#ifdef ER
+	m.erase(21);
+#endif
 	v.run(0, m._node);
 
 	
