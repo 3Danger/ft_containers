@@ -27,7 +27,7 @@ int    main()
 	_map_t m;
 
 	std::srand(22);
-	for (int i = 0; i < 25; i++)
+	for (int i = 0; i < 5; i++)
 	{
 		m.insert(pair<int, std::string>(i, "_"));	
 	}
@@ -38,8 +38,30 @@ int    main()
 	// 	m.erase(i);
 	// m.erase(0);
 #ifdef SHOW
+	std::cout << std::endl;
+	std::cout << "---------------" << std::endl;
+	std::cout << std::endl;
+	
 	v.run(0, m._node);
-	m.erase(21);
+	m.erase(1);
+	std::cout << std::endl;
+	std::cout << "---------------" << std::endl;
+	std::cout << std::endl;
+	v.run(0, m._node);
+	m.erase(3);
+	std::cout << std::endl;
+	std::cout << "---------------" << std::endl;
+	std::cout << std::endl;
+	v.run(0, m._node);
+	m.erase(2);
+	std::cout << std::endl;
+	std::cout << "---------------" << std::endl;
+	std::cout << std::endl;
+	v.run(0, m._node);
+	m.erase(0);
+	std::cout << std::endl;
+	std::cout << "---------------" << std::endl;
+	std::cout << std::endl;
 #endif
 #ifdef ER
 	m.erase(21);
